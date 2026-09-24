@@ -1,0 +1,1671 @@
+<!doctype html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DASHFLOW — Constructor de dashboards</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{ --bg:#f3f5f9; --card:#ffffff; --ink:#171a21; --muted:#606b7a; --line:#e2e6ec; --brand:#2563eb; --brand-2:#38bdf8; --ok:#0e9f6e; --warn:#d97706; --danger:#e0294f; --shadow:0 14px 30px rgba(20,30,60,.08);
+  --shellBg:#f3f5f9; --shellCard:#ffffff; --shellInk:#171a21; --shellMuted:#606b7a; --shellLine:#e2e6ec; --shellBtnBg:#eef1f6; --shellInputBg:#ffffff;
+  --brandPurple:#4d148c; --brandPurple2:#7c3aed; --brandOrange:#ff6200; }
+[data-theme="dark"]{ --shellBg:#18191a; --shellCard:#242526; --shellInk:#e4e6eb; --shellMuted:#b0b3b8; --shellLine:#3a3b3c; --shellBtnBg:#3a3b3c; --shellInputBg:#3a3b3c; --shadow:0 14px 30px rgba(0,0,0,.35);
+  --brandPurple:#b47cff; --brandPurple2:#d8b4fe; --brandOrange:#ff9d52; }
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--shellBg);color:var(--shellInk)}
+button,select,input{font:inherit}
+button{border:1px solid transparent;border-radius:10px;padding:10px 15px;font-weight:800;cursor:pointer;background:var(--shellBtnBg);color:var(--shellInk);transition:all .15s ease}
+button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 14px rgba(20,30,60,.08)}
+button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+button.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff}
+button.success{background:var(--ok);color:#fff}
+button.danger{background:#fff1f0;color:var(--danger);border-color:rgba(224,41,79,.15)}
+button.ghost{background:transparent;border:1px solid var(--shellLine);color:var(--shellInk)}
+input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],select{width:100%;padding:9px 10px;border:1px solid var(--shellLine);border-radius:8px;background:var(--shellInputBg);color:var(--shellInk)}
+.hidden{display:none!important}
+header.top{background:var(--shellCard);border-bottom:1px solid var(--shellLine);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.themeToggleBtn{font-size:18px;padding:8px 11px}
+.brandRow{display:flex;align-items:center;gap:10px}
+.brandLogo{width:34px;height:34px;border-radius:9px;object-fit:cover;background:linear-gradient(135deg,var(--brandPurple),var(--brandPurple2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;flex:0 0 auto}
+.brandTitle{font-weight:900;font-size:19px;letter-spacing:-.02em;color:var(--brandPurple)}
+.brandTitle .logoFlow{color:var(--brandOrange)}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 16px 60px}
+.stepDots{display:flex;gap:6px;align-items:center}
+.stepDots span{width:8px;height:8px;border-radius:50%;background:var(--shellLine)}
+.stepDots span.active{background:var(--brand);width:22px;border-radius:5px}
+.screen{display:none}
+.screen.active{display:block}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;color:var(--shellInk)}
+h2{font-size:18px;margin:0 0 12px;color:var(--shellInk)}
+p.sub{color:var(--shellMuted);margin:0 0 22px}
+.purposeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:26px}
+.purposeCard{position:relative;background:var(--shellCard);border:2px solid var(--shellLine);border-radius:16px;padding:20px 14px;text-align:center;cursor:pointer;box-shadow:var(--shadow);color:var(--shellInk)}
+.purposeCard:hover{transform:translateY(-2px)}
+.purposeCard.selected{border-color:var(--brand)}
+.purposeCard .ic{font-size:30px;margin-bottom:8px}
+.purposeCard .t{font-weight:800;font-size:14px}
+.purposeCard .d{font-size:11.5px;color:var(--shellMuted);margin-top:4px;line-height:1.4}
+.purposeCard.special{border-color:var(--brandOrange);background:linear-gradient(160deg,rgba(77,20,140,.09),rgba(255,98,0,.09))}
+.purposeCard.special .t{color:var(--brandPurple)}
+.purposeCard.special .badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--brandPurple),var(--brandOrange));color:#fff;font-size:9.5px;font-weight:900;letter-spacing:.03em;padding:3px 10px;border-radius:999px;white-space:nowrap;box-shadow:0 3px 8px rgba(0,0,0,.2)}
+.card{background:var(--shellCard);border:1px solid var(--shellLine);border-radius:16px;padding:20px;box-shadow:var(--shadow);color:var(--shellInk)}
+.dropzone{border:2px dashed var(--shellLine);border-radius:14px;padding:34px 16px;text-align:center;cursor:pointer;background:var(--shellBg)}
+.dropzone.drag{border-color:var(--brand)}
+.dropzone .big{font-size:34px}
+.field{margin:14px 0}
+.field label{display:block;font-size:12.5px;font-weight:800;margin-bottom:5px;color:var(--shellMuted);text-transform:uppercase;letter-spacing:.03em}
+.colorSwatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid var(--shellCard);box-shadow:0 0 0 1px var(--shellLine)}
+.swatch.selected{box-shadow:0 0 0 2px var(--shellInk)}
+.logoPreview{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--shellBtnBg);display:flex;align-items:center;justify-content:center;color:var(--shellMuted);font-size:11px;text-align:center}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+table.previewTable{width:100%;border-collapse:collapse;font-size:12.5px;color:var(--shellInk)}
+table.previewTable th,table.previewTable td{border:1px solid var(--shellLine);padding:6px 8px;text-align:left;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+table.previewTable thead th{background:var(--shellBtnBg);position:sticky;top:0}
+tr.headerRowPick{cursor:pointer}
+tr.headerRowPick:hover td{background:var(--shellBtnBg)}
+tr.headerRowPick.isHeader td{background:var(--brand);color:#fff;font-weight:800}
+.colConfigRow{display:grid;grid-template-columns:26px 1.3fr 1fr 90px;gap:8px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--shellLine)}
+.colConfigRow:last-child{border-bottom:0}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--shellBtnBg);color:var(--shellMuted)}
+.tabBar{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tabBar button{background:var(--shellBtnBg);font-size:12.5px;padding:8px 13px;color:var(--shellInk)}
+.tabBar button.active{background:var(--shellInk);color:var(--shellBg)}
+.builderLayout{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+@media(max-width:900px){.builderLayout{grid-template-columns:1fr}}
+.panel{position:sticky;top:70px}
+.widgetItem{border:1px solid var(--shellLine);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--shellBg);color:var(--shellInk)}
+.widgetItem .hd{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:13px;margin-bottom:6px}
+.widgetItem .hd button{padding:3px 8px;font-size:11px}
+.dashGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+.kpiCard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);border-top:4px solid var(--brand)}
+.kpiCard .lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.kpiCard .val{font-size:24px;font-weight:900;margin-top:4px}
+.chartsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:16px}
+.chartCard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+.chartCard h3{margin:0 0 8px;font-size:14px}
+.chartCard canvas{max-height:260px}
+.filterBar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.filterBar .fitem{min-width:150px}
+.filterBar label{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase}
+.dataTableWrap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);overflow-x:auto}
+table.dashTable{width:100%;border-collapse:collapse;font-size:12.5px}
+table.dashTable th,table.dashTable td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+table.dashTable th{cursor:pointer;user-select:none;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.02em}
+table.dashTable th.sorted{color:var(--ink)}
+tr.detailRow td{background:#fafbfd;padding:12px}
+.detailGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.detailGrid .di{font-size:12px}
+.detailGrid .di b{display:block;color:var(--muted);font-size:10.5px;text-transform:uppercase}
+.expandBtn{background:none;border:0;padding:2px 6px;cursor:pointer;font-size:13px}
+.smallNote{font-size:12px;color:var(--shellMuted);margin-top:6px}
+.checkrow{display:flex;align-items:center;gap:8px}
+.emptyState{text-align:center;padding:40px 20px;color:var(--shellMuted)}
+.sectionHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.sectionHead h2{margin:0;font-size:15px;color:var(--shellInk)}
+.sectionHead button{padding:4px 11px;font-size:13px}
+.dashSection{margin-bottom:18px}
+.dashSection.collapsed .sectionBody{display:none}
+input[type=color]{width:44px;height:34px;padding:2px;border:1px solid var(--shellLine);border-radius:8px;cursor:pointer;background:var(--shellInputBg)}
+.colorField{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.reorderBtns{display:flex;gap:3px;align-items:center}
+.reorderBtns button{padding:2px 7px;font-size:11px}
+.authShell{display:grid;grid-template-columns:1.05fr 1fr;max-width:980px;margin:16px auto 30px;border-radius:24px;overflow:hidden;box-shadow:var(--shadow);background:var(--shellCard)}
+@media(max-width:760px){.authShell{grid-template-columns:1fr}}
+.authBrandPanel{position:relative;overflow:hidden;background:linear-gradient(160deg,var(--brandPurple),var(--brandPurple2) 55%,var(--brandOrange));color:#fff;padding:44px 40px;display:flex;flex-direction:column;justify-content:center;gap:20px}
+.authBrandPanel:before{content:'';position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.09);top:-90px;right:-70px}
+.authBrandPanel:after{content:'';position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07);bottom:-70px;left:-50px}
+.authBrandLogo{display:flex;align-items:center;gap:12px;position:relative}
+.authBrandLogo .brandLogo{background:rgba(255,255,255,.2);width:46px;height:46px;font-size:17px}
+.authBrandName{font-weight:900;font-size:19px;letter-spacing:-.02em;color:#fff}
+.authBrandName .logoFlow{color:#ffd9b3}
+.authBrandTitle{position:relative;font-size:27px;margin:4px 0 0;color:#fff;letter-spacing:-.02em;line-height:1.2}
+.authBrandSub{position:relative;color:rgba(255,255,255,.88);margin:0;line-height:1.55;font-size:14px}
+.authFeatureList{position:relative;list-style:none;padding:0;margin:6px 0 0;display:flex;flex-direction:column;gap:13px}
+.authFeatureList li{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:#fff;line-height:1.4}
+.authFeatureList .fIcon{font-size:16px;flex:0 0 auto;background:rgba(255,255,255,.18);width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.authFormPanel{padding:44px 38px;display:flex;align-items:center;justify-content:center}
+.authFormInner{width:100%;max-width:340px}
+.authFormTitle{font-size:19px;margin:16px 0 14px;color:var(--shellInk)}
+.authTabBar{background:var(--shellBg);padding:4px;border-radius:12px;gap:0;margin-bottom:0}
+.authTabBar button{flex:1;background:transparent;border-radius:9px;color:var(--shellMuted);box-shadow:none}
+.authTabBar button.active{background:linear-gradient(135deg,var(--brandPurple),var(--brandOrange));color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+.authTabBar button:hover:not(.active){transform:none;box-shadow:none;color:var(--shellInk)}
+.pwWrap{position:relative}
+.pwWrap input{padding-right:42px}
+.pwToggle{position:absolute;right:3px;top:3px;bottom:3px;background:transparent;border:0;padding:0 10px;font-size:15px;cursor:pointer;box-shadow:none}
+.pwToggle:hover{transform:none;box-shadow:none;background:var(--shellBtnBg)}
+.authMsg{font-size:12.5px;color:var(--danger);min-height:16px;margin-top:6px;line-height:1.4}
+.authSubmitBtn{margin-top:8px;padding:13px 15px;font-size:14.5px;background:linear-gradient(135deg,var(--brandPurple),var(--brandOrange));box-shadow:0 8px 18px rgba(77,20,140,.22)}
+.authCheckrow{align-items:flex-start;margin:14px 0}
+.authCheckrow input{margin-top:3px;flex:0 0 auto}
+.authSwitchLine{text-align:center;font-size:12.5px;color:var(--shellMuted);margin-top:16px}
+.authSwitchLine a{color:var(--brandPurple);font-weight:800;cursor:pointer;text-decoration:none}
+.authSwitchLine a:hover{text-decoration:underline}
+#legalModal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brandRow"><div class="brandLogo">DF</div><div class="brandTitle">Mi Dash<span class="logoFlow">Flow</span></div></div>
+  <div class="row">
+    <div class="stepDots" id="stepDots"><span class="active"></span><span></span><span></span><span></span></div>
+    <select id="langSelect" class="ghost" style="width:auto;padding:8px 10px"><option value="es">🇪🇸 Español</option><option value="en">🇬🇧 English</option></select>
+    <button id="themeToggleBtn" class="ghost themeToggleBtn" title="Cambiar tema">🌙</button>
+    <button id="resetAllBtn" class="ghost hidden" title="Empezar un dashboard nuevo">🔄 Nuevo</button>
+    <span id="userInfoBadge" class="smallNote hidden" style="margin:0"></span>
+    <button id="logoutBtn" class="ghost hidden" title="Cerrar sesión">🚪</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- Acceso: crear cuenta / iniciar sesión -->
+<section id="screenAuth" class="screen active">
+  <div class="authShell">
+    <div class="authBrandPanel">
+      <div class="authBrandLogo"><div class="brandLogo">DF</div><div class="authBrandName">Mi Dash<span class="logoFlow">Flow</span></div></div>
+      <h1 class="authBrandTitle" data-i18n="authTitle">Bienvenido a DASHFLOW</h1>
+      <p class="authBrandSub" data-i18n="authSub">Inicia sesión o crea tu cuenta para acceder a todas las herramientas y productos.</p>
+      <ul class="authFeatureList">
+        <li><span class="fIcon">📊</span><span data-i18n="authFeat1">Dashboards ilimitados desde Excel, CSV o PDF</span></li>
+        <li><span class="fIcon">🧾</span><span data-i18n="authFeat2">Proformas y cotizaciones en formato Perú</span></li>
+        <li><span class="fIcon">✍️</span><span data-i18n="authFeat3">AutograFlow: firma electrónica de documentos</span></li>
+        <li><span class="fIcon">🔒</span><span data-i18n="authFeat4">Todo se procesa en tu navegador, nunca en un servidor</span></li>
+      </ul>
+    </div>
+    <div class="authFormPanel">
+      <div class="authFormInner">
+        <div class="tabBar authTabBar" id="authTabs">
+          <button data-authtab="login" class="active" data-i18n="loginTab">Iniciar sesión</button>
+          <button data-authtab="register" data-i18n="registerTab">Crear cuenta</button>
+        </div>
+        <div id="authLoginBox">
+          <h2 class="authFormTitle" data-i18n="loginTitle">Inicia sesión</h2>
+          <div class="field"><label data-i18n="userLabel">Usuario</label><input id="authLoginUser" type="text" autocomplete="username" data-i18n-ph="userPh" placeholder="Ej. juan123"></div>
+          <div class="field"><label data-i18n="passLabel">Contraseña</label>
+            <div class="pwWrap"><input id="authLoginPass" type="password" autocomplete="current-password" data-i18n-ph="passPh" placeholder="Tu contraseña"><button type="button" class="pwToggle" data-target="authLoginPass">👁</button></div>
+          </div>
+          <div id="authLoginMsg" class="authMsg"></div>
+          <button id="authLoginBtn" class="primary authSubmitBtn" style="width:100%" data-i18n="loginBtn">🔐 Ingresar</button>
+          <div class="authSwitchLine"><a href="#" id="forgotPasswordLink" data-i18n="forgotPasswordLink">¿Olvidaste tu contraseña?</a></div>
+          <div class="authSwitchLine"><span data-i18n="switchToRegisterText">¿No tienes cuenta?</span> <a data-authtab="register" data-i18n="switchToRegisterLink">Crea una</a></div>
+        </div>
+        <div id="authRegisterBox" class="hidden">
+          <h2 class="authFormTitle" data-i18n="registerTitle">Crea tu cuenta</h2>
+          <div class="field"><label data-i18n="userLabel">Usuario</label><input id="authRegUser" type="text" autocomplete="username" data-i18n-ph="userPh" placeholder="Ej. juan123"></div>
+          <div class="field"><label data-i18n="emailLabel">Correo electrónico</label><input id="authRegEmail" type="email" autocomplete="email" data-i18n-ph="emailPh" placeholder="Ej. juan@correo.com"></div>
+          <div class="field"><label data-i18n="passLabel">Contraseña</label>
+            <div class="pwWrap"><input id="authRegPass" type="password" autocomplete="new-password" data-i18n-ph="passMinPh" placeholder="Mínimo 6 caracteres"><button type="button" class="pwToggle" data-target="authRegPass">👁</button></div>
+          </div>
+          <div class="field"><label data-i18n="pass2Label">Confirmar contraseña</label>
+            <div class="pwWrap"><input id="authRegPass2" type="password" autocomplete="new-password" data-i18n-ph="pass2Ph" placeholder="Repite tu contraseña"><button type="button" class="pwToggle" data-target="authRegPass2">👁</button></div>
+          </div>
+          <div class="checkrow authCheckrow"><input id="authAcceptTerms" type="checkbox"><span class="smallNote" style="margin-top:0">
+            <strong data-i18n="acceptTermsLabel">Acepto los Términos y Condiciones y la Política de Privacidad</strong><br>
+            <span data-i18n="acceptTermsDescPrefix">Léelos aquí:</span>
+            <a href="#" id="dfOpenTermsLink" data-i18n="termsLinkLbl" style="color:var(--brandPurple);font-weight:800">Términos y Condiciones</a> ·
+            <a href="#" id="dfOpenPrivacyLink" data-i18n="privacyLinkLbl" style="color:var(--brandPurple);font-weight:800">Política de Privacidad</a>
+          </span></div>
+          <div id="authRegMsg" class="authMsg"></div>
+          <button id="authRegBtn" class="primary authSubmitBtn" style="width:100%" data-i18n="registerBtn">👤 Crear cuenta</button>
+          <div class="authSwitchLine"><span data-i18n="switchToLoginText">¿Ya tienes cuenta?</span> <a data-authtab="login" data-i18n="switchToLoginLink">Inicia sesión</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PASO 1: Propósito -->
+<section id="screenPurpose" class="screen">
+  <h1 data-i18n="p1Title">¿Para qué quieres tu dashboard?</h1>
+  <p class="sub" data-i18n="p1Sub">Elige lo que más se parece a lo que necesitas. Esto solo te sugiere un punto de partida — igual podrás personalizar todo después.</p>
+  <div class="purposeGrid" id="purposeGrid"></div>
+  <div class="row" style="justify-content:flex-end"><button id="toStep2Btn" class="primary" disabled data-i18n="contBtn">Continuar →</button></div>
+</section>
+
+<!-- PASO 2: Subir archivo + marca -->
+<section id="screenUpload" class="screen">
+  <h1 data-i18n="p2Title">Sube tu archivo y dale identidad a tu dashboard</h1>
+  <p class="sub" data-i18n="p2Sub">Acepta Excel (.xlsx, .xls), CSV o PDF. Los datos se procesan en tu navegador — no se suben a ningún servidor.</p>
+  <div class="grid2">
+    <div class="card">
+      <h2 data-i18n="p2Card1">1. Tus datos</h2>
+      <div class="tabBar" id="dataModeTabs">
+        <button data-mode="upload" class="active" data-i18n="modeUpload">📤 Subir archivo</button>
+        <button data-mode="manual" data-i18n="modeManual">✍️ Crear desde cero</button>
+      </div>
+      <div id="uploadModeBox">
+        <div class="dropzone" id="dropzone">
+          <div class="big">📄</div>
+          <div><strong data-i18n="dropTitle">Arrastra tu archivo aquí</strong> <span data-i18n="dropOr">o haz clic para elegirlo</span></div>
+          <div class="smallNote">.xlsx · .xls · .csv · .pdf</div>
+        </div>
+        <input id="fileInput" type="file" accept=".xlsx,.xls,.csv,.pdf" class="hidden">
+        <div id="fileStatus" class="smallNote"></div>
+      </div>
+      <div id="manualModeBox" class="hidden">
+        <p class="smallNote" style="margin-top:0" data-i18n="manualHint">Define los nombres de tus campos (columnas). Podrás elegir el tipo de dato y empezar a escribir filas en el siguiente paso.</p>
+        <div id="manualColList"></div>
+        <button id="addManualColBtn" class="ghost" style="width:100%;margin-top:8px" data-i18n="addFieldBtn">+ Agregar campo</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="p2Card2">2. Identidad de tu dashboard</h2>
+      <div class="field"><label data-i18n="titleLabel">Título del tablero</label><input id="titleInput" type="text" data-i18n-ph="titlePh" placeholder="Ej. Ventas 2026" value="Mi Dashboard"></div>
+      <div class="field"><label data-i18n="logoLabel">Logotipo (opcional)</label>
+        <div class="row"><div class="logoPreview" id="logoPreviewBox" data-i18n="noLogo">Sin logo</div><label class="ghost" for="logoInput" style="display:inline-flex;align-items:center" data-i18n="uploadImgBtn">🖼️ Subir imagen</label><input id="logoInput" type="file" accept="image/*" class="hidden"></div>
+      </div>
+      <div class="field"><label data-i18n="colorLabel">Color principal</label>
+        <div class="colorSwatches" id="colorSwatches"></div>
+      </div>
+    </div>
+  </div>
+  <div class="between" style="margin-top:18px"><button id="backTo1Btn" class="ghost" data-i18n="backBtn">← Atrás</button><button id="toStep3Btn" class="primary" disabled data-i18n="contBtn">Continuar →</button></div>
+</section>
+
+<!-- PASO 3: Confirmar estructura -->
+<section id="screenStructure" class="screen">
+  <h1 data-i18n="p3Title">Confirma cómo están organizados tus datos</h1>
+  <p class="sub" data-i18n="p3Sub">Detectamos esto automáticamente. Revisa que esté bien antes de construir tu dashboard — puedes ajustar nombres, tipos y qué encabezado usar.</p>
+  <div id="sheetPickerWrap" class="card hidden" style="margin-bottom:16px">
+    <h2 id="sheetPickerTitle" data-i18n="sheetPickTitle">Elige la hoja / tabla a usar</h2>
+    <div class="row" id="sheetPicker"></div>
+  </div>
+  <div class="card" id="previewCard" style="margin-bottom:16px">
+    <h2 data-i18n="previewClickTitle">Vista previa (haz clic en la fila que contiene los encabezados)</h2>
+    <div style="max-height:260px;overflow:auto"><table class="previewTable" id="previewTable"></table></div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <h2 data-i18n="colsDetectedTitle">Columnas detectadas</h2>
+    <div class="colConfigRow" style="font-weight:800;color:var(--shellMuted);font-size:11px;text-transform:uppercase">
+      <div></div><div data-i18n="colName">Nombre</div><div data-i18n="colType">Tipo de dato</div><div data-i18n="colInclude">Incluir</div>
+    </div>
+    <div id="colConfigList"></div>
+  </div>
+  <div class="card hidden" id="manualRowsCard">
+    <div class="between"><h2 data-i18n="yourDataTitle">Tus datos</h2><button id="addManualRowBtn" class="ghost" data-i18n="addRowBtn">+ Agregar fila</button></div>
+    <div style="overflow-x:auto"><table class="previewTable" id="manualRowsTable"></table></div>
+  </div>
+  <div class="between" style="margin-top:18px"><button id="backTo2Btn" class="ghost" data-i18n="backBtn">← Atrás</button><button id="toStep4Btn" class="primary" data-i18n="buildBtn">Construir mi dashboard →</button></div>
+</section>
+
+<!-- Módulo dedicado: Proformas / Cotizaciones -->
+<section id="screenProforma" class="screen">
+  <h1 data-i18n="pfTitle">Proforma / Cotización</h1>
+  <p class="sub" data-i18n="pfSub">Completa los datos de tu empresa y tu cliente, agrega los ítems, y genera un PDF o imagen listos para enviar — con el formato que se usa normalmente en Perú.</p>
+  <div class="grid2">
+    <div class="card">
+      <h2 data-i18n="pfCompanyTitle">Tu empresa</h2>
+      <div class="field"><label>RUC</label><input id="pfRuc" type="text" placeholder="20123456789"></div>
+      <div class="field"><label data-i18n="pfCompanyName">Razón social / Nombre</label><input id="pfCompanyName" type="text" placeholder="Mi Empresa S.A.C."></div>
+      <div class="field"><label data-i18n="pfSlogan">Eslogan (opcional)</label><input id="pfSlogan" type="text" data-i18n-ph="pfSloganPh" placeholder="Ej. Calidad que inspira confianza"></div>
+      <div class="field"><label data-i18n="pfAddress">Dirección</label><input id="pfAddress" type="text" placeholder="Av. Siempre Viva 123, Lima"></div>
+      <div class="grid2">
+        <div class="field"><label data-i18n="pfPhone">Teléfono</label><input id="pfPhone" type="text" placeholder="987 654 321"></div>
+        <div class="field"><label data-i18n="pfEmail">Correo</label><input id="pfEmail" type="text" placeholder="contacto@miempresa.com"></div>
+      </div>
+      <div class="field"><label data-i18n="logoLabelShort">Logotipo</label><div class="row"><div class="logoPreview" id="pfLogoPreview" data-i18n="noLogo">Sin logo</div><label class="ghost" for="pfLogoInput" data-i18n="uploadBtnShort">🖼️ Subir</label><input id="pfLogoInput" type="file" accept="image/*" class="hidden"></div></div>
+      <div class="field"><label data-i18n="pfDocColor">Color del documento</label><div class="colorSwatches" id="pfColorSwatches"></div></div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="pfClientTitle">Cliente y datos de la proforma</h2>
+      <div class="field"><label data-i18n="pfClientName">Cliente (nombre o razón social)</label><input id="pfClientName" type="text"></div>
+      <div class="grid2">
+        <div class="field"><label data-i18n="pfClientRuc">RUC / DNI del cliente</label><input id="pfClientRuc" type="text"></div>
+        <div class="field"><label data-i18n="pfClientAddress">Dirección del cliente</label><input id="pfClientAddress" type="text"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label data-i18n="pfNumber">N° de proforma</label><input id="pfNumber" type="text" placeholder="0001"></div>
+        <div class="field"><label data-i18n="pfDate">Fecha</label><input id="pfDate" type="date"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label data-i18n="pfValidity">Validez (días)</label><input id="pfValidity" type="number" value="15"></div>
+        <div class="field"><label data-i18n="pfIgvLabel">Incluir IGV (18%)</label><select id="pfIgv"><option value="yes" data-i18n="yesOpt">Sí</option><option value="no" data-i18n="noOpt">No</option></select></div>
+      </div>
+      <div class="field"><label data-i18n="pfNotes">Condiciones / notas</label><input id="pfNotes" type="text" data-i18n-ph="pfNotesPh" placeholder="Forma de pago: contado. Precios incluyen IGV."></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="between"><h2 data-i18n="pfItems">Ítems</h2><button id="pfAddItemBtn" class="ghost" data-i18n="pfAddItem">+ Agregar ítem</button></div>
+    <div style="overflow-x:auto"><table class="previewTable" id="pfItemsTable" style="width:100%"></table></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2 data-i18n="previewTitle">Vista previa</h2>
+    <div style="overflow-x:auto;background:#e9edf3;border-radius:12px;padding:18px;display:flex;justify-content:center">
+      <div id="pfDocument" style="background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.15)"></div>
+    </div>
+  </div>
+
+  <div class="between" style="margin-top:18px">
+    <button id="pfBackBtn" class="ghost" data-i18n="backBtn">← Atrás</button>
+    <div class="row">
+      <button id="pfDownloadPdfBtn" class="primary" data-i18n="pfDownloadPdf">📄 Descargar PDF</button>
+      <button id="pfDownloadJpgBtn" class="ghost" data-i18n="pfDownloadJpg">🖼️ Descargar JPG</button>
+      <button id="pfShareBtn" class="success" data-i18n="pfShare">💬 Compartir por WhatsApp</button>
+      <button id="pfEmailBtn" class="ghost" data-i18n="pfEmailBtnLbl">✉️ Enviar por correo</button>
+    </div>
+  </div>
+</section>
+
+<!-- PASO 4: Constructor / Dashboard -->
+<section id="screenBuilder" class="screen">
+  <div class="between" style="margin-bottom:14px">
+    <div><h1 id="dashTitleShow" style="margin-bottom:2px">Mi Dashboard</h1><p class="sub" style="margin:0" id="dashRecordCount"></p></div>
+    <div class="row"><button id="downloadDashBtn" class="success" data-i18n="downloadDash">⬇️ Descargar dashboard</button><button id="editModeBtn" class="ghost" data-i18n="editBtn">🛠️ Editar</button><button id="backTo3Btn" class="ghost" data-i18n="backStructBtn">← Estructura</button></div>
+  </div>
+
+  <div class="builderLayout">
+    <div class="panel card" id="editorPanel">
+      <div class="tabBar">
+        <button data-tab="filters" class="active" data-i18n="tabFiltersLbl">Filtros</button>
+        <button data-tab="cards" data-i18n="tabCardsLbl">Tarjetas</button>
+        <button data-tab="charts" data-i18n="tabChartsLbl">Gráficos</button>
+        <button data-tab="table" data-i18n="tabTableLbl">Tabla</button>
+        <button data-tab="appearance" data-i18n="tabAppearanceLbl">Apariencia</button>
+      </div>
+
+      <div id="tabFilters">
+        <div id="filterList"></div>
+        <div class="field"><label data-i18n="addFilterLabel">Agregar filtro sobre la columna</label>
+          <select id="newFilterCol"></select>
+        </div>
+        <button id="addFilterBtn" class="ghost" style="width:100%" data-i18n="addFilterBtn">+ Agregar filtro</button>
+      </div>
+
+      <div id="tabCards" class="hidden">
+        <div id="cardList"></div>
+        <div class="field"><label data-i18n="numColLabel">Columna numérica</label><select id="newCardCol"></select></div>
+        <div class="field"><label data-i18n="metricLabel">Métrica</label><select id="newCardAgg">
+          <option value="sum" data-i18n="aggSum">Suma</option><option value="avg" data-i18n="aggAvg">Promedio</option><option value="count" data-i18n="aggCountRows">Conteo de filas</option>
+          <option value="countDistinct" data-i18n="aggDistinct">Valores únicos</option><option value="max" data-i18n="aggMax">Máximo</option><option value="min" data-i18n="aggMin">Mínimo</option>
+        </select></div>
+        <div class="field"><label data-i18n="cardLabelLabel">Etiqueta de la tarjeta</label><input id="newCardLabel" type="text" data-i18n-ph="cardLabelPh" placeholder="Ej. Ventas totales"></div>
+        <button id="addCardBtn" class="ghost" style="width:100%" data-i18n="addCardBtn">+ Agregar tarjeta</button>
+      </div>
+
+      <div id="tabCharts" class="hidden">
+        <div id="chartList"></div>
+        <div class="field"><label data-i18n="chartTypeLabel">Tipo de gráfico</label><select id="newChartType">
+          <option value="bar" data-i18n="chartBar">Barras</option><option value="line" data-i18n="chartLine">Líneas</option><option value="pie" data-i18n="chartPie">Circular</option><option value="doughnut" data-i18n="chartDonut">Dona</option>
+        </select></div>
+        <div class="field"><label data-i18n="chartXLabel">Eje / agrupar por</label><select id="newChartX"></select></div>
+        <div class="field"><label data-i18n="chartYLabel">Valor</label><select id="newChartY"></select></div>
+        <div class="field"><label data-i18n="metricLabel">Métrica</label><select id="newChartAgg">
+          <option value="sum" data-i18n="aggSum">Suma</option><option value="avg" data-i18n="aggAvg">Promedio</option><option value="count" data-i18n="aggCount">Conteo</option>
+        </select></div>
+        <div class="field"><label data-i18n="chartTitleLabel">Título del gráfico</label><input id="newChartLabel" type="text" data-i18n-ph="chartTitlePh" placeholder="Ej. Ventas por mes"></div>
+        <button id="addChartBtn" class="ghost" style="width:100%" data-i18n="addChartBtn">+ Agregar gráfico</button>
+      </div>
+
+      <div id="tabTable" class="hidden">
+        <p class="smallNote" style="margin-top:0" data-i18n="tableColsHint">Elige qué columnas mostrar en el listado.</p>
+        <div class="row" style="margin-bottom:6px"><button id="tableColAllBtn" class="ghost" style="font-size:11px;padding:4px 10px" data-i18n="markAllBtn">Marcar todo</button><button id="tableColNoneBtn" class="ghost" style="font-size:11px;padding:4px 10px" data-i18n="unmarkAllBtn">Desmarcar todo</button></div>
+        <div id="tableColCheckList"></div>
+        <h2 style="margin-top:18px;font-size:14px" data-i18n="expandRowTitle">Al expandir una fila (▸)</h2>
+        <p class="smallNote" style="margin-top:0" data-i18n="detailColsHint">Elige qué campos se muestran en el detalle de cada fila.</p>
+        <div class="row" style="margin-bottom:6px"><button id="detailColAllBtn" class="ghost" style="font-size:11px;padding:4px 10px" data-i18n="markAllBtn">Marcar todo</button><button id="detailColNoneBtn" class="ghost" style="font-size:11px;padding:4px 10px" data-i18n="unmarkAllBtn">Desmarcar todo</button></div>
+        <div id="detailColCheckList"></div>
+      </div>
+
+      <div id="tabAppearance" class="hidden">
+        <p class="smallNote" style="margin-top:0" data-i18n="appearanceHint">Personaliza los colores de tu dashboard. Los cambios se ven al instante.</p>
+        <div class="field"><label data-i18n="primaryColorLabel">Color principal (botones, tarjetas)</label><div class="colorField"><input type="color" id="colorPrimary"><div class="colorSwatches" id="colorSwatches2"></div></div></div>
+        <div class="field"><label data-i18n="secondaryColorLabel">Color secundario (gráficos)</label><input type="color" id="colorSecondary"></div>
+        <div class="field"><label data-i18n="bgColorLabel">Color de fondo</label><input type="color" id="colorBg"></div>
+        <div class="field"><label data-i18n="cardColorLabel">Color de tarjetas</label><input type="color" id="colorCard"></div>
+        <div class="field"><label data-i18n="textColorLabel">Color de texto</label><input type="color" id="colorText"></div>
+        <button id="resetAppearanceBtn" class="ghost" style="width:100%" data-i18n="resetColorsBtn">↺ Restablecer colores</button>
+      </div>
+    </div>
+
+    <div id="dashboardView">
+      <div class="dashSection" id="sectionFilters"><div class="sectionHead"><h2 data-i18n="sectionFiltersTitle">🔎 Filtros</h2><button class="ghost toggleSectionBtn" data-sec="filters">▾</button></div>
+        <div class="sectionBody"><div class="filterBar hidden" id="filterBar"></div></div></div>
+      <div class="dashSection" id="sectionCards"><div class="sectionHead"><h2 data-i18n="sectionCardsTitle">📌 Tarjetas</h2><button class="ghost toggleSectionBtn" data-sec="cards">▾</button></div>
+        <div class="sectionBody"><div class="dashGrid" id="kpiGrid"></div></div></div>
+      <div class="dashSection" id="sectionCharts"><div class="sectionHead"><h2 data-i18n="sectionChartsTitle">📊 Gráficos</h2><button class="ghost toggleSectionBtn" data-sec="charts">▾</button></div>
+        <div class="sectionBody"><div class="chartsGrid" id="chartsGrid"></div></div></div>
+      <div class="dashSection" id="sectionTable"><div class="sectionHead"><h2 data-i18n="sectionTableTitle">📋 Tabla</h2><button class="ghost toggleSectionBtn" data-sec="table">▾</button></div>
+        <div class="sectionBody"><div class="dataTableWrap"><table class="dashTable" id="dataTable"></table></div></div></div>
+    </div>
+  </div>
+</section>
+
+<div id="legalModal" class="hidden">
+  <div class="card" style="max-width:640px;width:100%;max-height:85vh;overflow:auto">
+    <h2 id="legalModalTitle" style="margin-top:0"></h2>
+    <div id="legalModalBody" style="font-size:13px;line-height:1.65;color:var(--shellMuted)"></div>
+    <div style="text-align:center;margin-top:16px"><button id="legalModalClose" class="primary" data-i18n="legalModalClose">Cerrar</button></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ===================== DASHFLOW — estado y utilidades ===================== */
+const $=id=>document.getElementById(id);
+const DF_KEY='dashflow_config_v1';
+const BRAND_COLORS=['#2563eb','#0e9f6e','#d97706','#e0294f','#7c3aed','#0891b2','#4d148c','#111827'];
+const PURPOSES=[
+  {id:'finanzas',ic:'💰',tKey:'purpFinanzasT',dKey:'purpFinanzasD'},
+  {id:'inventario',ic:'📦',tKey:'purpInventarioT',dKey:'purpInventarioD'},
+  {id:'clientes',ic:'👥',tKey:'purpClientesT',dKey:'purpClientesD'},
+  {id:'proformas',ic:'🧾',tKey:'purpProformasT',dKey:'purpProformasD'},
+  {id:'otro',ic:'📊',tKey:'purpOtroT',dKey:'purpOtroD'}
+];
+/* ===================== Idioma (ES/EN) ===================== */
+const LANG_KEY='dashflow_lang_v1';
+let LANG=localStorage.getItem(LANG_KEY)||'es';
+const I18N={
+  es:{
+    p1Title:'¿Para qué quieres tu dashboard?',p1Sub:'Elige lo que más se parece a lo que necesitas. Esto solo te sugiere un punto de partida — igual podrás personalizar todo después.',contBtn:'Continuar →',
+    purpFinanzasT:'Finanzas',purpFinanzasD:'Ingresos, gastos, flujo de caja',
+    purpInventarioT:'Inventario',purpInventarioD:'Stock, productos, movimientos',
+    purpClientesT:'Clientes / CRM',purpClientesD:'Contactos, seguimiento, ventas',
+    purpProformasT:'Proformas / Cotizaciones',purpProformasD:'Documentos comerciales',
+    purpOtroT:'Otro / Genérico',purpOtroD:'Cualquier tipo de datos',
+    p2Title:'Sube tu archivo y dale identidad a tu dashboard',p2Sub:'Acepta Excel (.xlsx, .xls), CSV o PDF. Los datos se procesan en tu navegador — no se suben a ningún servidor.',
+    p2Card1:'1. Tus datos',modeUpload:'📤 Subir archivo',modeManual:'✍️ Crear desde cero',dropTitle:'Arrastra tu archivo aquí',dropOr:'o haz clic para elegirlo',
+    manualHint:'Define los nombres de tus campos (columnas). Podrás elegir el tipo de dato y empezar a escribir filas en el siguiente paso.',addFieldBtn:'+ Agregar campo',
+    p2Card2:'2. Identidad de tu dashboard',titleLabel:'Título del tablero',titlePh:'Ej. Ventas 2026',logoLabel:'Logotipo (opcional)',noLogo:'Sin logo',uploadImgBtn:'🖼️ Subir imagen',colorLabel:'Color principal',
+    backBtn:'← Atrás',
+    p3Title:'Confirma cómo están organizados tus datos',p3Sub:'Detectamos esto automáticamente. Revisa que esté bien antes de construir tu dashboard — puedes ajustar nombres, tipos y qué encabezado usar.',
+    sheetPickTitle:'Elige la hoja / tabla a usar',previewClickTitle:'Vista previa (haz clic en la fila que contiene los encabezados)',colsDetectedTitle:'Columnas detectadas',
+    colName:'Nombre',colType:'Tipo de dato',colInclude:'Incluir',yourDataTitle:'Tus datos',addRowBtn:'+ Agregar fila',buildBtn:'Construir mi dashboard →',
+    pfTitle:'Proforma / Cotización',pfSub:'Completa los datos de tu empresa y tu cliente, agrega los ítems, y genera un PDF o imagen listos para enviar — con el formato que se usa normalmente en Perú.',
+    pfCompanyTitle:'Tu empresa',pfCompanyName:'Razón social / Nombre',pfSlogan:'Eslogan (opcional)',pfSloganPh:'Ej. Calidad que inspira confianza',pfAddress:'Dirección',
+    pfPhone:'Teléfono',pfEmail:'Correo',logoLabelShort:'Logotipo',uploadBtnShort:'🖼️ Subir',pfDocColor:'Color del documento',
+    pfClientTitle:'Cliente y datos de la proforma',pfClientName:'Cliente (nombre o razón social)',pfClientRuc:'RUC / DNI del cliente',pfClientAddress:'Dirección del cliente',
+    pfNumber:'N° de proforma',pfDate:'Fecha',pfValidity:'Validez (días)',pfIgvLabel:'Incluir IGV (18%)',yesOpt:'Sí',noOpt:'No',pfNotes:'Condiciones / notas',pfNotesPh:'Forma de pago: contado. Precios incluyen IGV.',
+    pfItems:'Ítems',pfAddItem:'+ Agregar ítem',previewTitle:'Vista previa',
+    pfDownloadPdf:'📄 Descargar PDF',pfDownloadJpg:'🖼️ Descargar JPG',pfShare:'💬 Compartir por WhatsApp',pfEmailBtnLbl:'✉️ Enviar por correo',
+    downloadDash:'⬇️ Descargar dashboard',editBtn:'🛠️ Editar',backStructBtn:'← Estructura',
+    tabFiltersLbl:'Filtros',tabCardsLbl:'Tarjetas',tabChartsLbl:'Gráficos',tabTableLbl:'Tabla',tabAppearanceLbl:'Apariencia',
+    addFilterLabel:'Agregar filtro sobre la columna',addFilterBtn:'+ Agregar filtro',
+    numColLabel:'Columna numérica',metricLabel:'Métrica',aggSum:'Suma',aggAvg:'Promedio',aggCountRows:'Conteo de filas',aggDistinct:'Valores únicos',aggMax:'Máximo',aggMin:'Mínimo',
+    cardLabelLabel:'Etiqueta de la tarjeta',cardLabelPh:'Ej. Ventas totales',addCardBtn:'+ Agregar tarjeta',
+    chartTypeLabel:'Tipo de gráfico',chartBar:'Barras',chartLine:'Líneas',chartPie:'Circular',chartDonut:'Dona',
+    chartXLabel:'Eje / agrupar por',chartYLabel:'Valor',aggCount:'Conteo',chartTitleLabel:'Título del gráfico',chartTitlePh:'Ej. Ventas por mes',addChartBtn:'+ Agregar gráfico',
+    tableColsHint:'Elige qué columnas mostrar en el listado.',markAllBtn:'Marcar todo',unmarkAllBtn:'Desmarcar todo',
+    expandRowTitle:'Al expandir una fila (▸)',detailColsHint:'Elige qué campos se muestran en el detalle de cada fila.',
+    appearanceHint:'Personaliza los colores de tu dashboard. Los cambios se ven al instante.',
+    primaryColorLabel:'Color principal (botones, tarjetas)',secondaryColorLabel:'Color secundario (gráficos)',bgColorLabel:'Color de fondo',cardColorLabel:'Color de tarjetas',textColorLabel:'Color de texto',resetColorsBtn:'↺ Restablecer colores',
+    sectionFiltersTitle:'🔎 Filtros',sectionCardsTitle:'📌 Tarjetas',sectionChartsTitle:'📊 Gráficos',sectionTableTitle:'📋 Tabla',
+    noFiltersMsg:'Aún no agregaste filtros. Ve a la pestaña <strong>Filtros</strong> del panel de edición para agregar uno (por ejemplo, filtrar por categoría o fecha).',
+    noCardsMsg:'Aún no agregaste tarjetas. Ve a la pestaña <strong>Tarjetas</strong> del panel de edición para crear la primera (por ejemplo, la suma de una columna numérica).',
+    noChartsMsg:'Aún no agregaste gráficos. Ve a la pestaña <strong>Gráficos</strong> del panel de edición para crear el primero.',
+    filterAllOpt:'Todos',noTextCols:'No hay columnas de texto/fecha/categoría',noNumCols:'No hay columnas numéricas',noGroupCols:'No hay columnas para agrupar',
+    typeText:'texto',typeNumber:'número',typeCurrency:'moneda',typeDate:'fecha',typeCategory:'categoría',
+    resetTooltip:'Empezar un dashboard nuevo',resetBtnLbl:'🔄 Nuevo',themeTooltip:'Cambiar tema',
+    noRowsConfirm:'Todavía no tienes ninguna fila de datos. ¿Quieres continuar de todas formas? Podrás agregar filas más adelante volviendo a este paso.',
+    noColsConfirm:'No dejaste ninguna columna marcada para incluir. ¿Continuar de todas formas?',
+    recordsLoaded:' registros cargados',recordsVisible:' visibles con filtros',
+    noTableColsMsg:'Selecciona columnas para la tabla en el panel "Tabla".',
+    resetAllConfirm:'¿Empezar un dashboard nuevo? Se perderá la configuración actual guardada.',
+    authTitle:'Bienvenido a DASHFLOW',authSub:'Inicia sesión o crea tu cuenta para acceder a todas las herramientas y productos.',
+    loginTab:'Iniciar sesión',registerTab:'Crear cuenta',userLabel:'Usuario',userPh:'Ej. juan123',passLabel:'Contraseña',passPh:'Tu contraseña',
+    passMinPh:'Mínimo 6 caracteres',pass2Label:'Confirmar contraseña',pass2Ph:'Repite tu contraseña',emailLabel:'Correo electrónico',emailPh:'Ej. juan@correo.com',
+    termsHint:'Acepto que mis datos (archivos, colores, dashboards) se procesan únicamente en mi navegador y no se envían a ningún servidor.',
+    loginBtn:'🔐 Ingresar',registerBtn:'👤 Crear cuenta',logoutTooltip:'Cerrar sesión',
+    authErrInvalid:'Usuario o contraseña incorrectos.',authErrUserLen:'El usuario debe tener al menos 3 caracteres.',
+    authErrEmail:'Ingresa un correo electrónico válido.',authErrPassLen:'La contraseña debe tener al menos 6 caracteres.',
+    authErrPassMatch:'Las contraseñas no coinciden.',authErrTerms:'Debes aceptar cómo se procesan tus datos para continuar.',
+    authErrUserExists:'Ese usuario ya existe. Elige otro o inicia sesión.',authErrEmailExists:'Ya existe una cuenta registrada con ese correo.',
+    specialBadge:'⭐ Producto especial',afCardTitle:'AutograFlow',afCardDesc:'Firma electrónica y gestión de documentos',
+    loginTitle:'Inicia sesión',registerTitle:'Crea tu cuenta',
+    authFeat1:'Dashboards ilimitados desde Excel, CSV o PDF',authFeat2:'Proformas y cotizaciones en formato Perú',
+    authFeat3:'AutograFlow: firma electrónica de documentos',authFeat4:'Todo se procesa en tu navegador, nunca en un servidor',
+    switchToRegisterText:'¿No tienes cuenta?',switchToRegisterLink:'Crea una',
+    switchToLoginText:'¿Ya tienes cuenta?',switchToLoginLink:'Inicia sesión',
+    forgotPasswordLink:'¿Olvidaste tu contraseña?',
+    acceptTermsLabel:'Acepto los Términos y Condiciones y la Política de Privacidad',
+    acceptTermsDescPrefix:'Léelos aquí:',termsLinkLbl:'Términos y Condiciones',privacyLinkLbl:'Política de Privacidad',
+    legalModalClose:'Cerrar',
+    termsTitle:'Términos y Condiciones',
+    termsText:'<p><strong>0. Alcance.</strong> Tu cuenta es única y da acceso a toda la plataforma, incluyendo AutograFlow (firma electrónica de documentos) y DASHFLOW (constructor de dashboards). Estos Términos y Condiciones aplican a ambos productos y a cualquier otro que se incorpore en el futuro bajo la misma cuenta.</p><p><strong>1. Aceptación.</strong> Al crear una cuenta y usar esta plataforma aceptas estos Términos y Condiciones en su totalidad. Si no estás de acuerdo, no debes usarla.</p><p><strong>2. Descripción del servicio.</strong> AutograFlow permite preparar documentos y capturar firmas, sellos y huellas. DASHFLOW permite construir dashboards, proformas y reportes a partir de tus propios datos. Ambos se ofrecen tal como están, sin garantías de ningún tipo, expresas o implícitas.</p><p><strong>3. Exención de responsabilidad.</strong> El creador de la aplicación, sus administradores, colaboradores y socios de desarrollo no asumen responsabilidad civil, penal, laboral, tributaria ni de ningún otro tipo derivada del uso de la plataforma, del contenido de los documentos, dashboards o proformas generados, ni de la validez legal, autenticidad o efectos jurídicos que dichos documentos puedan tener en cualquier jurisdicción.</p><p><strong>4. Responsabilidad del usuario.</strong> Es responsabilidad exclusiva de cada usuario verificar que el uso de firmas electrónicas, dashboards o proformas generados con estas herramientas cumpla con la normativa aplicable en su país o sector, así como garantizar la veracidad, legalidad y consentimiento de todas las partes involucradas.</p><p><strong>5. No constituye asesoría legal.</strong> Nada en esta plataforma constituye asesoría legal, contable o tributaria. Ante dudas, consulta con un profesional calificado.</p><p><strong>6. Uso bajo tu propio riesgo.</strong> El uso de la plataforma, incluyendo la carga, firma, almacenamiento local y envío de documentos o datos, es bajo tu propio riesgo y responsabilidad exclusiva.</p><p><strong>7. Modificaciones.</strong> Estos términos pueden actualizarse en cualquier momento; el uso continuado de la plataforma implica la aceptación de los cambios vigentes.</p><p><strong>8. Limitación total de responsabilidad.</strong> En la máxima medida permitida por la ley aplicable, el creador, administradores y socios de desarrollo quedan completamente deslindados de cualquier reclamo, pérdida, daño o perjuicio directo, indirecto, incidental o consecuente relacionado con el uso de esta plataforma.</p>',
+    privacyTitle:'Política de Privacidad',
+    privacyText:'<p><strong>0. Alcance.</strong> Esta Política de Privacidad aplica a toda la plataforma. AutograFlow y DASHFLOW comparten la misma cuenta de usuario y procesan tus datos de la misma forma: 100% en tu navegador.</p><p><strong>1. Qué se procesa.</strong> Esta plataforma permite trabajar con archivos PDF, firmas, sellos, huellas, hojas de cálculo (Excel/CSV) y los datos que ingreses manualmente para tus dashboards y proformas.</p><p><strong>2. Procesamiento 100% local.</strong> Todo el procesamiento ocurre directamente en tu navegador, en tu propio dispositivo. No existen servidores propios para recibir, filtrar, analizar o almacenar tus documentos o datos.</p><p><strong>3. Sin almacenamiento ni alojamiento remoto.</strong> Ningún archivo, firma, sello, huella o dato se sube, guarda o aloja en servidores externos. Los archivos que generas se crean y descargan directamente en tu dispositivo.</p><p><strong>4. Datos guardados en tu dispositivo.</strong> Cierta información de cuenta y configuración (usuario, plan, preferencias, dashboards) se guarda únicamente en el almacenamiento local de tu navegador. Esta información no se transmite a ningún servidor.</p><p><strong>5. Nada persiste en línea.</strong> Si limpias los datos del navegador, cambias de dispositivo o el almacenamiento local se reinicia, la información no estará disponible en ningún otro lugar: no existe una copia en línea de tus documentos o dashboards.</p><p><strong>6. Compartir por WhatsApp, correo u otros medios.</strong> Si usas alguna función para compartir, el archivo se entrega directamente a la función nativa de tu dispositivo; la plataforma no interviene ni conserva copia de ese envío.</p><p><strong>7. Terceros.</strong> La plataforma puede cargar librerías públicas de terceros (por ejemplo, para generación de PDF o gráficos) desde redes de distribución de contenido, únicamente para su funcionamiento; esto no implica el envío de tus datos a dichos terceros.</p>'
+  },
+  en:{
+    p1Title:'What do you want your dashboard for?',p1Sub:'Choose whatever is closest to what you need. This is just a starting point — you can customize everything afterward.',contBtn:'Continue →',
+    purpFinanzasT:'Finance',purpFinanzasD:'Income, expenses, cash flow',
+    purpInventarioT:'Inventory',purpInventarioD:'Stock, products, movements',
+    purpClientesT:'Clients / CRM',purpClientesD:'Contacts, follow-up, sales',
+    purpProformasT:'Quotes / Invoices',purpProformasD:'Business documents',
+    purpOtroT:'Other / Generic',purpOtroD:'Any type of data',
+    p2Title:'Upload your file and give your dashboard an identity',p2Sub:'Accepts Excel (.xlsx, .xls), CSV, or PDF. Data is processed in your browser — nothing is uploaded to any server.',
+    p2Card1:'1. Your data',modeUpload:'📤 Upload file',modeManual:'✍️ Create from scratch',dropTitle:'Drag your file here',dropOr:'or click to choose it',
+    manualHint:'Define the names of your fields (columns). You will be able to choose the data type and start entering rows in the next step.',addFieldBtn:'+ Add field',
+    p2Card2:'2. Your dashboard identity',titleLabel:'Dashboard title',titlePh:'e.g. Sales 2026',logoLabel:'Logo (optional)',noLogo:'No logo',uploadImgBtn:'🖼️ Upload image',colorLabel:'Primary color',
+    backBtn:'← Back',
+    p3Title:'Confirm how your data is organized',p3Sub:'We detected this automatically. Review it before building your dashboard — you can adjust names, types, and which row is the header.',
+    sheetPickTitle:'Choose the sheet / table to use',previewClickTitle:'Preview (click the row that contains the headers)',colsDetectedTitle:'Detected columns',
+    colName:'Name',colType:'Data type',colInclude:'Include',yourDataTitle:'Your data',addRowBtn:'+ Add row',buildBtn:'Build my dashboard →',
+    pfTitle:'Quote / Proforma Invoice',pfSub:'Fill in your company and client details, add the line items, and generate a ready-to-send PDF or image — using the format normally used in Peru.',
+    pfCompanyTitle:'Your company',pfCompanyName:'Company name',pfSlogan:'Slogan (optional)',pfSloganPh:'e.g. Quality that inspires confidence',pfAddress:'Address',
+    pfPhone:'Phone',pfEmail:'Email',logoLabelShort:'Logo',uploadBtnShort:'🖼️ Upload',pfDocColor:'Document color',
+    pfClientTitle:'Client and quote details',pfClientName:'Client (name or company)',pfClientRuc:'Client tax ID / ID number',pfClientAddress:'Client address',
+    pfNumber:'Quote number',pfDate:'Date',pfValidity:'Validity (days)',pfIgvLabel:'Include tax (18%)',yesOpt:'Yes',noOpt:'No',pfNotes:'Terms / notes',pfNotesPh:'Payment terms: cash. Prices include tax.',
+    pfItems:'Items',pfAddItem:'+ Add item',previewTitle:'Preview',
+    pfDownloadPdf:'📄 Download PDF',pfDownloadJpg:'🖼️ Download JPG',pfShare:'💬 Share via WhatsApp',pfEmailBtnLbl:'✉️ Send by email',
+    downloadDash:'⬇️ Download dashboard',editBtn:'🛠️ Edit',backStructBtn:'← Structure',
+    tabFiltersLbl:'Filters',tabCardsLbl:'Cards',tabChartsLbl:'Charts',tabTableLbl:'Table',tabAppearanceLbl:'Appearance',
+    addFilterLabel:'Add filter on column',addFilterBtn:'+ Add filter',
+    numColLabel:'Numeric column',metricLabel:'Metric',aggSum:'Sum',aggAvg:'Average',aggCountRows:'Row count',aggDistinct:'Unique values',aggMax:'Maximum',aggMin:'Minimum',
+    cardLabelLabel:'Card label',cardLabelPh:'e.g. Total sales',addCardBtn:'+ Add card',
+    chartTypeLabel:'Chart type',chartBar:'Bar',chartLine:'Line',chartPie:'Pie',chartDonut:'Donut',
+    chartXLabel:'Axis / group by',chartYLabel:'Value',aggCount:'Count',chartTitleLabel:'Chart title',chartTitlePh:'e.g. Sales by month',addChartBtn:'+ Add chart',
+    tableColsHint:'Choose which columns to show in the list.',markAllBtn:'Select all',unmarkAllBtn:'Deselect all',
+    expandRowTitle:'When a row is expanded (▸)',detailColsHint:'Choose which fields are shown in each row detail.',
+    appearanceHint:'Customize your dashboard colors. Changes apply instantly.',
+    primaryColorLabel:'Primary color (buttons, cards)',secondaryColorLabel:'Secondary color (charts)',bgColorLabel:'Background color',cardColorLabel:'Card color',textColorLabel:'Text color',resetColorsBtn:'↺ Reset colors',
+    sectionFiltersTitle:'🔎 Filters',sectionCardsTitle:'📌 Cards',sectionChartsTitle:'📊 Charts',sectionTableTitle:'📋 Table',
+    noFiltersMsg:'You have not added any filters yet. Go to the <strong>Filters</strong> tab in the edit panel to add one (for example, filter by category or date).',
+    noCardsMsg:'You have not added any cards yet. Go to the <strong>Cards</strong> tab in the edit panel to create the first one (for example, the sum of a numeric column).',
+    noChartsMsg:'You have not added any charts yet. Go to the <strong>Charts</strong> tab in the edit panel to create the first one.',
+    filterAllOpt:'All',noTextCols:'No text/date/category columns',noNumCols:'No numeric columns',noGroupCols:'No columns to group by',
+    typeText:'text',typeNumber:'number',typeCurrency:'currency',typeDate:'date',typeCategory:'category',
+    resetTooltip:'Start a new dashboard',resetBtnLbl:'🔄 New',themeTooltip:'Switch theme',
+    noRowsConfirm:'You do not have any data rows yet. Do you want to continue anyway? You can add rows later by coming back to this step.',
+    noColsConfirm:'You did not leave any column marked to include. Continue anyway?',
+    recordsLoaded:' records loaded',recordsVisible:' visible with filters',
+    noTableColsMsg:'Select columns for the table in the "Table" panel.',
+    resetAllConfirm:'Start a new dashboard? Your current saved configuration will be lost.',
+    authTitle:'Welcome to DASHFLOW',authSub:'Log in or create your account to access all tools and products.',
+    loginTab:'Log in',registerTab:'Create account',userLabel:'Username',userPh:'e.g. john123',passLabel:'Password',passPh:'Your password',
+    passMinPh:'At least 6 characters',pass2Label:'Confirm password',pass2Ph:'Repeat your password',emailLabel:'Email',emailPh:'e.g. john@email.com',
+    termsHint:'I agree that my data (files, colors, dashboards) is processed only in my browser and never sent to any server.',
+    loginBtn:'🔐 Log in',registerBtn:'👤 Create account',logoutTooltip:'Log out',
+    authErrInvalid:'Incorrect username or password.',authErrUserLen:'Username must be at least 3 characters.',
+    authErrEmail:'Enter a valid email address.',authErrPassLen:'Password must be at least 6 characters.',
+    authErrPassMatch:'Passwords do not match.',authErrTerms:'You must accept how your data is processed to continue.',
+    authErrUserExists:'That username already exists. Choose another or log in.',authErrEmailExists:'There is already an account registered with that email.',
+    specialBadge:'⭐ Featured product',afCardTitle:'AutograFlow',afCardDesc:'Electronic signatures and document management',
+    loginTitle:'Log in',registerTitle:'Create your account',
+    authFeat1:'Unlimited dashboards from Excel, CSV or PDF',authFeat2:'Quotes and invoices in Peru format',
+    authFeat3:'AutograFlow: electronic document signing',authFeat4:'Everything is processed in your browser, never on a server',
+    switchToRegisterText:'Don’t have an account?',switchToRegisterLink:'Create one',
+    switchToLoginText:'Already have an account?',switchToLoginLink:'Log in',
+    forgotPasswordLink:'Forgot your password?',
+    acceptTermsLabel:'I accept the Terms and Conditions and the Privacy Policy',
+    acceptTermsDescPrefix:'Read them here:',termsLinkLbl:'Terms and Conditions',privacyLinkLbl:'Privacy Policy',
+    legalModalClose:'Close',
+    termsTitle:'Terms and Conditions',
+    termsText:'<p><strong>0. Scope.</strong> Your account is unique and grants access to the whole platform, including AutograFlow (electronic document signing) and DASHFLOW (dashboard builder). These Terms and Conditions apply to both products and to any other product added under the same account in the future.</p><p><strong>1. Acceptance.</strong> By creating an account and using this platform you accept these Terms and Conditions in full. If you do not agree, you must not use it.</p><p><strong>2. Service description.</strong> AutograFlow lets you prepare documents and capture signatures, stamps and fingerprints. DASHFLOW lets you build dashboards, quotes and reports from your own data. Both are provided as is, without warranties of any kind, express or implied.</p><p><strong>3. Disclaimer of liability.</strong> The creator of the application, its administrators, collaborators and development partners assume no civil, criminal, labor, tax or any other liability arising from the use of the platform, the content of the documents, dashboards or quotes generated, or the legal validity, authenticity or legal effects such documents may have in any jurisdiction.</p><p><strong>4. User responsibility.</strong> It is the sole responsibility of each user to verify that the use of electronic signatures, dashboards or quotes generated with these tools complies with the regulations applicable in their country or sector, and to ensure the truthfulness, legality and consent of all parties involved.</p><p><strong>5. Not legal advice.</strong> Nothing in this platform constitutes legal, accounting or tax advice. If in doubt, consult a qualified professional.</p><p><strong>6. Use at your own risk.</strong> Use of the platform, including uploading, signing, local storage and sending of documents or data, is at your own risk and sole responsibility.</p><p><strong>7. Changes.</strong> These terms may be updated at any time; continued use of the platform implies acceptance of the current changes.</p><p><strong>8. Total limitation of liability.</strong> To the maximum extent permitted by applicable law, the creator, administrators and development partners are fully released from any claim, loss, damage or direct, indirect, incidental or consequential harm related to the use of this platform.</p>',
+    privacyTitle:'Privacy Policy',
+    privacyText:'<p><strong>0. Scope.</strong> This Privacy Policy applies to the whole platform. AutograFlow and DASHFLOW share the same user account and process your data the same way: 100% in your browser.</p><p><strong>1. What is processed.</strong> This platform lets you work with PDF files, signatures, stamps, fingerprints, spreadsheets (Excel/CSV) and the data you enter manually for your dashboards and quotes.</p><p><strong>2. 100% local processing.</strong> All processing happens directly in your browser, on your own device. There are no servers to receive, scan, analyze or store your documents or data.</p><p><strong>3. No remote storage or hosting.</strong> No file, signature, stamp, fingerprint or data is uploaded, saved or hosted on external servers. The files you generate are created and downloaded directly on your device.</p><p><strong>4. Data saved on your device.</strong> Certain account and configuration information (username, plan, preferences, dashboards) is saved only in your browser\'s local storage. This information is not transmitted to any server.</p><p><strong>5. Nothing persists online.</strong> If you clear your browser data, change devices, or local storage resets, the information will not be available anywhere else: there is no online copy of your documents or dashboards.</p><p><strong>6. Sharing via WhatsApp, email or other means.</strong> If you use a sharing feature, the file is handed directly to your device\'s native sharing function; the platform does not intervene or keep a copy of that transfer.</p><p><strong>7. Third parties.</strong> The platform may load public third-party libraries (for example, for PDF or chart generation) from content delivery networks solely for its operation; this does not involve sending your data to those third parties.</p>'
+  }
+};
+function T(key){return (I18N[LANG]&&I18N[LANG][key])||I18N.es[key]||key}
+function applyI18nStatic(){
+  document.documentElement.lang=LANG;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=T(el.dataset.i18n)});
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{el.placeholder=T(el.dataset.i18nPh)});
+  $('resetAllBtn').title=T('resetTooltip');$('resetAllBtn').textContent=T('resetBtnLbl');
+  $('themeToggleBtn').title=T('themeTooltip');
+  $('langSelect').value=LANG;
+}
+function setLang(l){LANG=l;localStorage.setItem(LANG_KEY,l);applyI18nStatic();renderPurposeGrid();populateSelectors();renderTableColChecklist();if(!$('screenBuilder').classList.contains('active'))return;renderDashboard()}
+
+/*__DF_INIT_START__*/
+let DF={
+  purpose:null,
+  branding:{title:'Mi Dashboard',color:BRAND_COLORS[0],accent2:'#38bdf8',bg:'#f3f5f9',card:'#ffffff',text:'#171a21',logo:null},
+  source:{type:null,fileName:'',sheetNames:[],activeSheet:null,pdfPages:0,activePdfMode:'all'},
+  workbook:null, // kept in memory only (not persisted): SheetJS workbook or pdf grids
+  rawRows:[],
+  headerRowIndex:0,
+  columns:[], // {key,label,type,include}
+  records:[],
+  widgets:{ filters:[], cards:[], charts:[], table:{columns:[],detailColumns:[],sortKey:null,sortDir:'asc'}, collapsed:{} },
+  filterValues:{}
+};
+/*__DF_INIT_END__*/
+let chartInstances={};
+let manualColumns=['Nombre','Categoría','Monto'];
+let dataMode='upload';
+let expandedRows=new Set();
+
+function uid(){return 'w'+Math.random().toString(36).slice(2,9)}
+function escapeHtml(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function setActiveScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+  const order=['screenPurpose','screenUpload','screenStructure','screenBuilder','screenProforma'];
+  const idx=order.indexOf(id);
+  document.querySelectorAll('#stepDots span').forEach((s,i)=>s.classList.toggle('active',i<=idx));
+  $('resetAllBtn').classList.toggle('hidden',idx<=0);
+}
+
+/* ===================== Persistencia local ===================== */
+function saveConfig(){
+  try{
+    const toSave={purpose:DF.purpose,branding:DF.branding,source:{type:DF.source.type,fileName:DF.source.fileName},
+      headerRowIndex:DF.headerRowIndex,columns:DF.columns,records:DF.records,widgets:DF.widgets};
+    localStorage.setItem(DF_KEY,JSON.stringify(toSave));
+  }catch(e){console.warn('No se pudo guardar el dashboard localmente',e)}
+}
+function loadConfig(){
+  try{
+    const raw=localStorage.getItem(DF_KEY);if(!raw)return false;
+    const saved=JSON.parse(raw);
+    Object.assign(DF,{purpose:saved.purpose,branding:saved.branding||DF.branding,source:Object.assign(DF.source,saved.source||{}),
+      headerRowIndex:saved.headerRowIndex||0,columns:saved.columns||[],records:saved.records||[],widgets:saved.widgets||DF.widgets});
+    return DF.records && DF.records.length>0;
+  }catch(e){return false}
+}
+
+/* ===================== Marca / branding ===================== */
+function applyBranding(){
+  document.documentElement.style.setProperty('--brand',DF.branding.color);
+  document.documentElement.style.setProperty('--brand-2',DF.branding.accent2||'#38bdf8');
+  document.documentElement.style.setProperty('--bg',DF.branding.bg||'#f3f5f9');
+  document.documentElement.style.setProperty('--card',DF.branding.card||'#ffffff');
+  document.documentElement.style.setProperty('--ink',DF.branding.text||'#171a21');
+  $('dashTitleShow').textContent=DF.branding.title||'Mi Dashboard';
+  const prevBox=$('logoPreviewBox');
+  if(prevBox){
+    if(DF.branding.logo){prevBox.style.backgroundImage='url('+DF.branding.logo+')';prevBox.style.backgroundSize='cover';prevBox.textContent=''}
+    else{prevBox.style.backgroundImage='';prevBox.textContent='Sin logo'}
+  }
+}
+
+/* ===================== Cuentas / acceso =====================
+   DASHFLOW y AutograFlow comparten la misma cuenta: mismas claves de
+   localStorage y misma forma de usuario que AutograFlow, para que iniciar
+   sesión (o registrarse) en cualquiera de los dos abra el otro sin pedirlo
+   de nuevo. */
+const AF_USERS_KEY='autograflow_users_v1';
+const AF_SESSION_KEY='autograflow_session_v1';
+const AUTOGRAFLOW_URL='AutograFlow_v43_Registro_Login_Planes.html';
+function afUsers(){try{return JSON.parse(localStorage.getItem(AF_USERS_KEY)||'{}')}catch(e){return{}}}
+function afSaveUsers(u){localStorage.setItem(AF_USERS_KEY,JSON.stringify(u))}
+function afSession(){return localStorage.getItem(AF_SESSION_KEY)}
+function afSetSession(u){localStorage.setItem(AF_SESSION_KEY,u)}
+function afClearSession(){localStorage.removeItem(AF_SESSION_KEY)}
+function dfIsActive(u){return !!u&&!!u.access&&new Date(u.expiresAt)>new Date()}
+/* Dos archivos file:// no comparten localStorage entre sí en navegadores modernos
+   (cada uno queda en su propio origen aislado), así que la cuenta viaja en la URL
+   al cruzar de una app a la otra: quien recibe la guarda en su propio storage. */
+function gotoWithSso(url){
+  const uname=afSession();const user=uname&&afUsers()[uname];
+  const qs=user?('?'+new URLSearchParams({sso:JSON.stringify(user)}).toString()):'';
+  location.href=url+qs;
+}
+function ssoConsumeFromUrl(){
+  const params=new URLSearchParams(location.search);
+  const payload=params.get('sso');
+  if(!payload)return;
+  try{
+    const user=JSON.parse(payload);
+    if(user&&user.username){
+      const users=afUsers();users[user.username]=user;afSaveUsers(users);afSetSession(user.username);
+    }
+  }catch(e){console.warn('No se pudo procesar el inicio de sesión compartido',e)}
+  params.delete('sso');
+  const rest=params.toString();
+  history.replaceState(null,'',location.pathname+(rest?'?'+rest:'')+location.hash);
+}
+ssoConsumeFromUrl();
+function afFindUserByLogin(input){
+  const users=afUsers();const norm=String(input||'').trim().toLowerCase();
+  return Object.keys(users).find(uname=>uname.toLowerCase()===norm||(users[uname].email&&users[uname].email.toLowerCase()===norm))||null;
+}
+async function duHash(pw){
+  const enc=new TextEncoder().encode(String(pw));
+  const buf=await crypto.subtle.digest('SHA-256',enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function duSetAuthTab(tab){
+  document.querySelectorAll('#authTabs button').forEach(b=>b.classList.toggle('active',b.dataset.authtab===tab));
+  $('authLoginBox').classList.toggle('hidden',tab!=='login');
+  $('authRegisterBox').classList.toggle('hidden',tab!=='register');
+  $('authLoginMsg').textContent='';$('authRegMsg').textContent='';
+}
+document.querySelectorAll('[data-authtab]').forEach(b=>b.onclick=()=>duSetAuthTab(b.dataset.authtab));
+document.querySelectorAll('.pwToggle').forEach(btn=>btn.onclick=()=>{
+  const inp=$(btn.dataset.target);
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  btn.textContent=show?'🙈':'👁';
+});
+function dfOpenLegal(type){
+  $('legalModalTitle').textContent=type==='terms'?T('termsTitle'):T('privacyTitle');
+  $('legalModalBody').innerHTML=type==='terms'?T('termsText'):T('privacyText');
+  $('legalModal').classList.remove('hidden');
+}
+$('dfOpenTermsLink').onclick=e=>{e.preventDefault();dfOpenLegal('terms')};
+$('dfOpenPrivacyLink').onclick=e=>{e.preventDefault();dfOpenLegal('privacy')};
+$('legalModalClose').onclick=()=>$('legalModal').classList.add('hidden');
+$('forgotPasswordLink').onclick=e=>{e.preventDefault();location.href=AUTOGRAFLOW_URL+'?view=forgot'};
+async function duDoLogin(){
+  const input=$('authLoginUser').value.trim(),p=$('authLoginPass').value;
+  const uname=afFindUserByLogin(input);
+  if(!uname){$('authLoginMsg').textContent=T('authErrInvalid');return}
+  const users=afUsers();const user=users[uname];
+  const hash=await duHash(p);
+  if(user.password!==hash){$('authLoginMsg').textContent=T('authErrInvalid');return}
+  afSetSession(uname);
+  routeAfterAuth(user);
+}
+async function duDoRegister(){
+  const u=$('authRegUser').value.trim().toLowerCase(),email=$('authRegEmail').value.trim().toLowerCase(),p=$('authRegPass').value,p2=$('authRegPass2').value;
+  if(u.length<3){$('authRegMsg').textContent=T('authErrUserLen');return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){$('authRegMsg').textContent=T('authErrEmail');return}
+  if(p.length<6){$('authRegMsg').textContent=T('authErrPassLen');return}
+  if(p!==p2){$('authRegMsg').textContent=T('authErrPassMatch');return}
+  if(!$('authAcceptTerms').checked){$('authRegMsg').textContent=T('authErrTerms');return}
+  const users=afUsers();
+  if(users[u]){$('authRegMsg').textContent=T('authErrUserExists');return}
+  if(Object.values(users).some(x=>x.email&&x.email.toLowerCase()===email)){$('authRegMsg').textContent=T('authErrEmailExists');return}
+  const user={username:u,email,password:await duHash(p),access:false,docsUsed:0,createdAt:new Date().toISOString(),lang:LANG,termsAcceptedAt:new Date().toISOString()};
+  users[u]=user;afSaveUsers(users);
+  afSetSession(u);
+  routeAfterAuth(user);
+}
+$('authLoginBtn').onclick=duDoLogin;
+$('authRegBtn').onclick=duDoRegister;
+['authLoginUser','authLoginPass'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')duDoLogin()}));
+['authRegUser','authRegEmail','authRegPass','authRegPass2'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')duDoRegister()}));
+function routeAfterAuth(user){
+  // Un plan activo es lo que da acceso a toda la plataforma (DASHFLOW + AutograFlow).
+  // Si la cuenta todavía no tiene uno, AutograFlow ya sabe mostrar la pantalla de
+  // planes apenas detecta la sesión — no hace falta repetir esa pantalla aquí.
+  if(!dfIsActive(user)){gotoWithSso(AUTOGRAFLOW_URL);return}
+  enterHub(user);
+}
+function enterHub(user){
+  if(user.lang&&user.lang!==LANG)setLang(user.lang);
+  $('userInfoBadge').textContent='👤 '+user.username;
+  $('userInfoBadge').classList.remove('hidden');
+  $('logoutBtn').classList.remove('hidden');
+  $('logoutBtn').title=T('logoutTooltip');
+  const hasEmbedded=DF.records&&DF.records.length>0;
+  if(hasEmbedded||loadConfig()){
+    applyBranding();syncAppearanceInputs();populateSelectors();renderTableColChecklist();
+    renderFilterList();renderCardList();renderChartList();renderDashboard();
+    setActiveScreen('screenBuilder');
+  }else{
+    setActiveScreen('screenPurpose');
+  }
+}
+function logoutDashflow(){afClearSession();location.reload()}
+$('logoutBtn').onclick=logoutDashflow;
+function checkSessionAndBoot(){
+  // Un archivo de dashboard exportado trae sus propios datos incrustados y debe verse
+  // directamente, sin pedir cuenta — quien lo recibe no tiene por qué tener una.
+  const hasEmbedded=DF.records&&DF.records.length>0;
+  if(hasEmbedded){
+    applyBranding();syncAppearanceInputs();populateSelectors();renderTableColChecklist();
+    renderFilterList();renderCardList();renderChartList();renderDashboard();
+    setActiveScreen('screenBuilder');
+    return;
+  }
+  const uname=afSession();
+  const user=uname&&afUsers()[uname];
+  if(user){routeAfterAuth(user)}
+  else{setActiveScreen('screenAuth')}
+}
+
+/* ===================== PASO 1: Propósito ===================== */
+function renderPurposeGrid(){
+  const specialCard=`<div class="purposeCard special" data-special="autograflow">
+    <div class="badge">${T('specialBadge')}</div>
+    <div class="ic">✍️</div><div class="t">${T('afCardTitle')}</div><div class="d">${T('afCardDesc')}</div></div>`;
+  $('purposeGrid').innerHTML=PURPOSES.map(p=>`<div class="purposeCard${DF.purpose===p.id?' selected':''}" data-id="${p.id}">
+    <div class="ic">${p.ic}</div><div class="t">${T(p.tKey)}</div><div class="d">${T(p.dKey)}</div></div>`).join('')+specialCard;
+  $('purposeGrid').querySelectorAll('.purposeCard[data-id]').forEach(el=>el.onclick=()=>{
+    DF.purpose=el.dataset.id;renderPurposeGrid();$('toStep2Btn').disabled=false;
+  });
+  $('purposeGrid').querySelector('.purposeCard[data-special]').onclick=()=>{
+    gotoWithSso(AUTOGRAFLOW_URL);
+  };
+}
+
+/* ===================== PASO 2: Archivo + marca ===================== */
+function renderColorSwatches(){
+  $('colorSwatches').innerHTML=BRAND_COLORS.map(c=>`<div class="swatch${DF.branding.color===c?' selected':''}" data-c="${c}" style="background:${c}"></div>`).join('');
+  $('colorSwatches').querySelectorAll('.swatch').forEach(el=>el.onclick=()=>{DF.branding.color=el.dataset.c;renderColorSwatches();applyBranding()});
+}
+function readFileAsArrayBuffer(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsArrayBuffer(f)})}
+function readFileAsDataUrl(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)})}
+function readFileAsText(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsText(f)})}
+
+async function handleFile(file){
+  if(!file)return;
+  const name=file.name.toLowerCase();
+  $('fileStatus').textContent='Leyendo '+file.name+'…';
+  try{
+    if(name.endsWith('.csv')){
+      const text=await readFileAsText(file);
+      const wb=XLSX.read(text,{type:'string'});
+      DF.workbook=wb;DF.source={type:'excel',fileName:file.name,sheetNames:wb.SheetNames,activeSheet:wb.SheetNames[0]};
+    }else if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+      const buf=await readFileAsArrayBuffer(file);
+      const wb=XLSX.read(buf,{type:'array',cellDates:true});
+      DF.workbook=wb;DF.source={type:'excel',fileName:file.name,sheetNames:wb.SheetNames,activeSheet:wb.SheetNames[0]};
+    }else if(name.endsWith('.pdf')){
+      const buf=await readFileAsArrayBuffer(file);
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+      const pages=[];
+      for(let p=1;p<=pdf.numPages;p++){
+        const page=await pdf.getPage(p);
+        const content=await page.getTextContent();
+        const items=content.items.map(it=>({str:it.str,x:it.transform[4],y:it.transform[5]})).filter(it=>it.str.trim()!=='');
+        pages.push(extractPdfGrid(items));
+      }
+      DF.workbook=null;DF.source={type:'pdf',fileName:file.name,sheetNames:pages.map((_,i)=>'Página '+(i+1)),activeSheet:0,pdfPages:pages.length,pdfGrids:pages,activePdfMode:pages.length>1?'all':'0'};
+    }else{
+      $('fileStatus').textContent='Formato no soportado. Usa .xlsx, .xls, .csv o .pdf.';return;
+    }
+    $('fileStatus').textContent='✓ '+file.name+' cargado correctamente.';
+    checkStep2Ready();
+  }catch(e){console.error(e);$('fileStatus').textContent='No se pudo leer el archivo: '+(e.message||e)}
+}
+function extractPdfGrid(items){
+  if(!items.length)return[];
+  const rowThreshold=4,colThreshold=16;
+  const sorted=[...items].sort((a,b)=>b.y-a.y);
+  const rows=[];
+  sorted.forEach(it=>{
+    let row=rows.find(r=>Math.abs(r.y-it.y)<rowThreshold);
+    if(!row){row={y:it.y,items:[]};rows.push(row)}
+    row.items.push(it);
+  });
+  rows.forEach(r=>r.items.sort((a,b)=>a.x-b.x));
+  const xs=[...sorted.map(it=>it.x)].sort((a,b)=>a-b);
+  const bounds=[];
+  xs.forEach(x=>{if(!bounds.length||x-bounds[bounds.length-1]>colThreshold)bounds.push(x)});
+  function colIndex(x){let idx=0,best=Infinity;bounds.forEach((b,i)=>{const d=Math.abs(x-b);if(d<best){best=d;idx=i}});return idx}
+  return rows.map(r=>{
+    const cells=new Array(bounds.length).fill('');
+    r.items.forEach(it=>{const ci=colIndex(it.x);cells[ci]=(cells[ci]?cells[ci]+' ':'')+it.str});
+    return cells;
+  });
+}
+function checkStep2Ready(){$('toStep3Btn').disabled=!DF.source.type}
+function renderManualColList(){
+  $('manualColList').innerHTML=manualColumns.map((name,i)=>`<div class="row" style="margin:6px 0">
+    <input type="text" data-i="${i}" value="${escapeHtml(name)}" placeholder="Nombre del campo" style="flex:1">
+    <button class="danger" data-del="${i}" ${manualColumns.length<=1?'disabled':''}>✕</button></div>`).join('');
+  $('manualColList').querySelectorAll('input').forEach(inp=>inp.oninput=()=>{manualColumns[Number(inp.dataset.i)]=inp.value;syncManualReady()});
+  $('manualColList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{manualColumns.splice(Number(b.dataset.del),1);renderManualColList();syncManualReady()});
+}
+function syncManualReady(){
+  const valid=manualColumns.filter(c=>c.trim()!=='').length>0;
+  if(dataMode==='manual'){
+    DF.source=valid?{type:'manual',fileName:'Datos manuales',sheetNames:[],activeSheet:null}:{type:null,fileName:''};
+    $('fileStatus').textContent='';
+    checkStep2Ready();
+  }
+}
+
+/* ===================== PASO 3: Estructura ===================== */
+function loadActiveGrid(){
+  if(DF.source.type==='excel'){
+    const ws=DF.workbook.Sheets[DF.source.activeSheet];
+    DF.rawRows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+  }else if(DF.source.type==='pdf'){
+    if(DF.source.activePdfMode==='all'){
+      DF.rawRows=[].concat(...DF.source.pdfGrids);
+    }else{
+      DF.rawRows=DF.source.pdfGrids[Number(DF.source.activePdfMode)]||[];
+    }
+  }else if(DF.source.type==='manual'){
+    const validCols=manualColumns.filter(c=>c.trim()!=='');
+    if(!DF.rawRows.length){
+      DF.rawRows=[validCols];
+    }else{
+      DF.rawRows[0]=validCols;
+      for(let i=1;i<DF.rawRows.length;i++){
+        const row=DF.rawRows[i]||[];
+        DF.rawRows[i]=validCols.map((_,ci)=>row[ci]??'');
+      }
+    }
+    DF.headerRowIndex=0;
+    buildColumnsFromHeader();
+    return;
+  }
+  DF.headerRowIndex=0;
+  autoDetectHeaderAndColumns();
+}
+function autoDetectHeaderAndColumns(){
+  const rows=DF.rawRows;
+  if(!rows.length){DF.columns=[];return}
+  // heurística: primera fila con más celdas de texto no vacías y sin muchos números
+  let bestIdx=0,bestScore=-1;
+  for(let i=0;i<Math.min(rows.length,8);i++){
+    const r=rows[i];const nonEmpty=r.filter(c=>c!==''&&c!=null);
+    const textish=nonEmpty.filter(c=>isNaN(parseLocaleNumber(c))).length;
+    const score=nonEmpty.length+textish;
+    if(score>bestScore){bestScore=score;bestIdx=i}
+  }
+  DF.headerRowIndex=bestIdx;
+  buildColumnsFromHeader();
+}
+function parseLocaleNumber(v){
+  if(typeof v==='number')return v;
+  if(v==null)return NaN;
+  const s=String(v).trim().replace(/[^0-9.,\-]/g,'');
+  if(s==='')return NaN;
+  const normalized=s.replace(/\.(?=\d{3}(\D|$))/g,'').replace(',','.');
+  const n=parseFloat(normalized);
+  return isNaN(n)?parseFloat(s):n;
+}
+function inferColumnType(values){
+  const nonEmpty=values.filter(v=>v!==''&&v!=null);
+  if(!nonEmpty.length)return'text';
+  const dateLike=nonEmpty.filter(v=>v instanceof Date||(typeof v==='string'&&/^\d{1,4}[\/\-]\d{1,2}[\/\-]\d{1,4}/.test(v.trim())));
+  if(dateLike.length/nonEmpty.length>0.7)return'date';
+  const numLike=nonEmpty.filter(v=>!isNaN(parseLocaleNumber(v)));
+  if(numLike.length/nonEmpty.length>0.7){
+    const moneyLike=nonEmpty.some(v=>typeof v==='string'&&/[S\/$€]/.test(v));
+    return moneyLike?'currency':'number';
+  }
+  const distinct=new Set(nonEmpty.map(String)).size;
+  if(distinct/nonEmpty.length<0.5&&distinct<25)return'category';
+  return'text';
+}
+function buildColumnsFromHeader(){
+  const rows=DF.rawRows,hIdx=DF.headerRowIndex;
+  const header=rows[hIdx]||[];
+  const width=Math.max(header.length,...rows.slice(0,50).map(r=>r.length),1);
+  const dataRows=rows.slice(hIdx+1,hIdx+400);
+  const cols=[];
+  for(let c=0;c<width;c++){
+    const label=(header[c]!==undefined&&header[c]!=='')?String(header[c]):'Columna '+(c+1);
+    const sample=dataRows.map(r=>r[c]);
+    cols.push({key:'c'+c,label,type:inferColumnType(sample),include:true});
+  }
+  DF.columns=cols;
+}
+function renderPreviewTable(){
+  const rows=DF.rawRows.slice(0,15);
+  const width=Math.max(...rows.map(r=>r.length),1);
+  let html='<tbody>';
+  rows.forEach((r,i)=>{
+    html+=`<tr class="headerRowPick${i===DF.headerRowIndex?' isHeader':''}" data-i="${i}">`;
+    for(let c=0;c<width;c++)html+=`<td>${escapeHtml(r[c]??'')}</td>`;
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  $('previewTable').innerHTML=html;
+  $('previewTable').querySelectorAll('tr.headerRowPick').forEach(tr=>tr.onclick=()=>{
+    DF.headerRowIndex=Number(tr.dataset.i);buildColumnsFromHeader();renderPreviewTable();renderColConfig();
+  });
+}
+function renderSheetPicker(){
+  const wrap=$('sheetPickerWrap');
+  if(DF.source.type==='excel'&&DF.source.sheetNames.length>1){
+    wrap.classList.remove('hidden');
+    $('sheetPickerTitle').textContent='Elige la hoja a usar';
+    $('sheetPicker').innerHTML=DF.source.sheetNames.map(n=>`<button data-n="${escapeHtml(n)}" class="${n===DF.source.activeSheet?'primary':'ghost'}">${escapeHtml(n)}</button>`).join('');
+    $('sheetPicker').querySelectorAll('button').forEach(b=>b.onclick=()=>{DF.source.activeSheet=b.dataset.n;loadActiveGrid();renderSheetPicker();renderPreviewTable();renderColConfig()});
+  }else if(DF.source.type==='pdf'&&DF.source.pdfPages>1){
+    wrap.classList.remove('hidden');
+    $('sheetPickerTitle').textContent='Elige qué páginas usar';
+    const opts=[{v:'all',t:'Todas las páginas combinadas'}].concat(DF.source.pdfGrids.map((_,i)=>({v:String(i),t:'Solo página '+(i+1)})));
+    $('sheetPicker').innerHTML=opts.map(o=>`<button data-v="${o.v}" class="${DF.source.activePdfMode===o.v?'primary':'ghost'}">${o.t}</button>`).join('');
+    $('sheetPicker').querySelectorAll('button').forEach(b=>b.onclick=()=>{DF.source.activePdfMode=b.dataset.v;loadActiveGrid();renderSheetPicker();renderPreviewTable();renderColConfig()});
+  }else{wrap.classList.add('hidden')}
+}
+function renderColConfig(){
+  $('colConfigList').innerHTML=DF.columns.map((c,i)=>`
+    <div class="colConfigRow">
+      <div><span class="tag">${i+1}</span></div>
+      <div><input type="text" data-i="${i}" data-f="label" value="${escapeHtml(c.label)}"></div>
+      <div><select data-i="${i}" data-f="type">
+        <option value="text"${c.type==='text'?' selected':''}>Texto</option>
+        <option value="number"${c.type==='number'?' selected':''}>Número</option>
+        <option value="currency"${c.type==='currency'?' selected':''}>Moneda</option>
+        <option value="date"${c.type==='date'?' selected':''}>Fecha</option>
+        <option value="category"${c.type==='category'?' selected':''}>Categoría</option>
+      </select></div>
+      <div class="checkrow"><input type="checkbox" data-i="${i}" data-f="include" ${c.include?'checked':''}></div>
+    </div>`).join('');
+  $('colConfigList').querySelectorAll('[data-f]').forEach(el=>el.onchange=el.oninput=()=>{
+    const i=Number(el.dataset.i),f=el.dataset.f;
+    DF.columns[i][f]=f==='include'?el.checked:el.value;
+    if(DF.source.type==='manual')renderManualRowsTable();
+  });
+}
+function renderManualRowsTable(){
+  const table=$('manualRowsTable');
+  const dataRows=DF.rawRows.slice(1);
+  let html='<thead><tr>'+DF.columns.map(c=>`<th>${escapeHtml(c.label)}</th>`).join('')+'<th></th></tr></thead><tbody>';
+  dataRows.forEach((row,ri)=>{
+    html+='<tr>'+DF.columns.map((c,ci)=>`<td><input type="text" data-r="${ri}" data-c="${ci}" value="${escapeHtml(row[ci]??'')}" style="width:100%;border:0;padding:4px"></td>`).join('');
+    html+=`<td><button class="danger" data-delrow="${ri}">✕</button></td></tr>`;
+  });
+  html+='</tbody>';
+  table.innerHTML=html;
+  table.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{
+    const ri=Number(inp.dataset.r),ci=Number(inp.dataset.c);
+    DF.rawRows[ri+1][ci]=inp.value;
+  });
+  table.querySelectorAll('[data-delrow]').forEach(b=>b.onclick=()=>{
+    DF.rawRows.splice(Number(b.dataset.delrow)+1,1);
+    renderManualRowsTable();
+  });
+}
+function buildRecordsFromColumns(){
+  const rows=DF.rawRows.slice(DF.headerRowIndex+1);
+  DF.records=rows.filter(r=>r.some(c=>c!==''&&c!=null)).map(r=>{
+    const rec={};
+    DF.columns.forEach((c,i)=>{
+      if(!c.include)return;
+      let v=r[i];
+      if(c.type==='number'||c.type==='currency'){const n=parseLocaleNumber(v);v=isNaN(n)?null:n}
+      else if(c.type==='date'){const d=(v instanceof Date)?v:new Date(v);v=isNaN(d.getTime())?null:d.toISOString().slice(0,10)}
+      else{v=(v===undefined||v===null)?'':String(v)}
+      rec[c.key]=v;
+    });
+    return rec;
+  });
+}
+
+/* ===================== PASO 4: Constructor ===================== */
+function includedColumns(){return DF.columns.filter(c=>c.include)}
+function columnsByType(...types){return includedColumns().filter(c=>types.includes(c.type))}
+function colLabel(key){const c=DF.columns.find(c=>c.key===key);return c?c.label:key}
+
+function typeLabelEs(type){return{text:T('typeText'),number:T('typeNumber'),currency:T('typeCurrency'),date:T('typeDate'),category:T('typeCategory')}[type]||type}
+function colOption(c){return `<option value="${c.key}">${escapeHtml(c.label)} (${typeLabelEs(c.type)})</option>`}
+function populateSelectors(){
+  const catCols=columnsByType('category','text','date');
+  $('newFilterCol').innerHTML=catCols.length?catCols.map(colOption).join(''):'<option value="">'+T('noTextCols')+'</option>';
+  const numCols=columnsByType('number','currency');
+  $('newCardCol').innerHTML=numCols.length?numCols.map(colOption).join(''):'<option value="">'+T('noNumCols')+'</option>';
+  const xCols=columnsByType('category','date','text');
+  $('newChartX').innerHTML=xCols.length?xCols.map(colOption).join(''):'<option value="">'+T('noGroupCols')+'</option>';
+  $('newChartY').innerHTML=numCols.length?numCols.map(colOption).join(''):'<option value="">'+T('noNumCols')+'</option>';
+}
+function renderTableColChecklist(){
+  if(!DF.widgets.table.columns.length)DF.widgets.table.columns=includedColumns().slice(0,6).map(c=>c.key);
+  if(!DF.widgets.table.detailColumns||!DF.widgets.table.detailColumns.length)DF.widgets.table.detailColumns=includedColumns().map(c=>c.key);
+  $('tableColCheckList').innerHTML=includedColumns().map(c=>`
+    <div class="checkrow" style="margin:5px 0"><input type="checkbox" data-k="${c.key}" ${DF.widgets.table.columns.includes(c.key)?'checked':''}><span>${escapeHtml(c.label)}</span></div>`).join('');
+  $('tableColCheckList').querySelectorAll('input').forEach(el=>el.onchange=()=>{
+    const k=el.dataset.k;
+    if(el.checked){if(!DF.widgets.table.columns.includes(k))DF.widgets.table.columns.push(k)}
+    else{DF.widgets.table.columns=DF.widgets.table.columns.filter(x=>x!==k)}
+    renderDashboard();saveConfig();
+  });
+  renderDetailColChecklist();
+}
+function renderDetailColChecklist(){
+  $('detailColCheckList').innerHTML=includedColumns().map(c=>`
+    <div class="checkrow" style="margin:5px 0"><input type="checkbox" data-k="${c.key}" ${DF.widgets.table.detailColumns.includes(c.key)?'checked':''}><span>${escapeHtml(c.label)}</span></div>`).join('');
+  $('detailColCheckList').querySelectorAll('input').forEach(el=>el.onchange=()=>{
+    const k=el.dataset.k;
+    if(el.checked){if(!DF.widgets.table.detailColumns.includes(k))DF.widgets.table.detailColumns.push(k)}
+    else{DF.widgets.table.detailColumns=DF.widgets.table.detailColumns.filter(x=>x!==k)}
+    renderDashboard();saveConfig();
+  });
+}
+$('tableColAllBtn')&&($('tableColAllBtn').onclick=()=>{DF.widgets.table.columns=includedColumns().map(c=>c.key);renderTableColChecklist();renderDashboard();saveConfig()});
+$('tableColNoneBtn')&&($('tableColNoneBtn').onclick=()=>{DF.widgets.table.columns=[];renderTableColChecklist();renderDashboard();saveConfig()});
+$('detailColAllBtn')&&($('detailColAllBtn').onclick=()=>{DF.widgets.table.detailColumns=includedColumns().map(c=>c.key);renderDetailColChecklist();renderDashboard();saveConfig()});
+$('detailColNoneBtn')&&($('detailColNoneBtn').onclick=()=>{DF.widgets.table.detailColumns=[];renderDetailColChecklist();renderDashboard();saveConfig()});
+
+function getFilteredRecords(){
+  return DF.records.filter(rec=>{
+    return DF.widgets.filters.every(f=>{
+      const val=DF.filterValues[f.id];
+      if(val===undefined||val===''||val==='__all__')return true;
+      return String(rec[f.columnKey])===String(val);
+    });
+  });
+}
+function aggregate(records,colKey,agg){
+  const vals=records.map(r=>r[colKey]).filter(v=>v!==null&&v!==''&&v!==undefined);
+  const nums=vals.map(Number).filter(n=>!isNaN(n));
+  switch(agg){
+    case'sum':return nums.reduce((s,v)=>s+v,0);
+    case'avg':return nums.length?nums.reduce((s,v)=>s+v,0)/nums.length:0;
+    case'count':return records.length;
+    case'countDistinct':return new Set(vals.map(String)).size;
+    case'max':return nums.length?Math.max(...nums):0;
+    case'min':return nums.length?Math.min(...nums):0;
+    default:return 0;
+  }
+}
+function fmtNum(n,type){
+  if(n===null||n===undefined||isNaN(n))return'—';
+  const r=Math.round(n*100)/100;
+  if(type==='currency')return 'S/ '+r.toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return r.toLocaleString('es-PE');
+}
+
+function renderFilterBar(){
+  const bar=$('filterBar');
+  if(!DF.widgets.filters.length){
+    bar.classList.remove('hidden');
+    bar.innerHTML='<p class="smallNote" style="margin:0">'+T('noFiltersMsg')+'</p>';
+    return;
+  }
+  bar.classList.remove('hidden');
+  bar.innerHTML=DF.widgets.filters.map(f=>{
+    const col=DF.columns.find(c=>c.key===f.columnKey);
+    const options=[...new Set(DF.records.map(r=>r[f.columnKey]))].filter(v=>v!==''&&v!=null).sort();
+    const current=DF.filterValues[f.id]||'__all__';
+    return `<div class="fitem"><label>${escapeHtml(col?col.label:f.columnKey)}</label>
+      <select data-fid="${f.id}"><option value="__all__">${T('filterAllOpt')}</option>${options.map(o=>`<option value="${escapeHtml(String(o))}" ${current===String(o)?'selected':''}>${escapeHtml(String(o))}</option>`).join('')}</select></div>`;
+  }).join('');
+  bar.querySelectorAll('select').forEach(sel=>sel.onchange=()=>{DF.filterValues[sel.dataset.fid]=sel.value;renderDashboard()});
+}
+function renderKpis(){
+  const filtered=getFilteredRecords();
+  $('kpiGrid').innerHTML=DF.widgets.cards.map(card=>{
+    const col=DF.columns.find(c=>c.key===card.columnKey);
+    const val=aggregate(filtered,card.columnKey,card.agg);
+    const isMoney=col&&col.type==='currency';
+    const display=(card.agg==='count'||card.agg==='countDistinct')?Math.round(val).toLocaleString('es-PE'):fmtNum(val,isMoney?'currency':'number');
+    return `<div class="kpiCard"><div class="lbl">${escapeHtml(card.label)}</div><div class="val">${display}</div></div>`;
+  }).join('')||'<p class="smallNote" style="margin:0">'+T('noCardsMsg')+'</p>';
+}
+function renderCharts(){
+  const filtered=getFilteredRecords();
+  Object.values(chartInstances).forEach(ch=>ch.destroy());
+  chartInstances={};
+  if(!DF.widgets.charts.length){
+    $('chartsGrid').innerHTML='<p class="smallNote" style="margin:0">'+T('noChartsMsg')+'</p>';
+    return;
+  }
+  $('chartsGrid').innerHTML=DF.widgets.charts.map(ch=>`<div class="chartCard"><h3>${escapeHtml(ch.label)}</h3><canvas id="canvas_${ch.id}"></canvas></div>`).join('');
+  DF.widgets.charts.forEach(ch=>{
+    const groups={};
+    filtered.forEach(r=>{const k=r[ch.xKey]??'—';(groups[k]=groups[k]||[]).push(r)});
+    const labels=Object.keys(groups);
+    const data=labels.map(k=>aggregate(groups[k],ch.yKey,ch.agg));
+    const palette=['#2563eb','#0e9f6e','#d97706','#e0294f','#7c3aed','#0891b2','#f59e0b','#10b981'];
+    const canvas=$('canvas_'+ch.id);if(!canvas)return;
+    chartInstances[ch.id]=new Chart(canvas.getContext('2d'),{
+      type:ch.type,
+      data:{labels,datasets:[{label:ch.label,data,backgroundColor:(ch.type==='pie'||ch.type==='doughnut')?palette:DF.branding.color,borderColor:DF.branding.color,borderWidth:1}]},
+      options:{responsive:true,plugins:{legend:{display:(ch.type==='pie'||ch.type==='doughnut')}}}
+    });
+  });
+}
+function renderDataTable(){
+  const filtered=getFilteredRecords();
+  const cols=DF.widgets.table.columns.map(k=>DF.columns.find(c=>c.key===k)).filter(Boolean);
+  const sortKey=DF.widgets.table.sortKey,sortDir=DF.widgets.table.sortDir;
+  let rows=[...filtered];
+  if(sortKey){
+    rows.sort((a,b)=>{
+      const av=a[sortKey],bv=b[sortKey];
+      const an=Number(av),bn=Number(bv);
+      let cmp;
+      if(!isNaN(an)&&!isNaN(bn)&&av!==''&&bv!=='')cmp=an-bn;else cmp=String(av??'').localeCompare(String(bv??''));
+      return sortDir==='asc'?cmp:-cmp;
+    });
+  }
+  const table=$('dataTable');
+  if(!cols.length){table.innerHTML='<tr><td class="emptyState">'+T('noTableColsMsg')+'</td></tr>';return}
+  let thead='<thead><tr><th></th>'+cols.map(c=>`<th data-k="${c.key}" class="${sortKey===c.key?'sorted':''}">${escapeHtml(c.label)} ${sortKey===c.key?(sortDir==='asc'?'▲':'▼'):''}</th>`).join('')+'</tr></thead>';
+  let tbody='<tbody>';
+  rows.slice(0,500).forEach((r,idx)=>{
+    const rid='r'+idx;
+    tbody+=`<tr><td><button class="expandBtn" data-rid="${rid}">${expandedRows.has(rid)?'▾':'▸'}</button></td>${cols.map(c=>`<td>${escapeHtml(c.type==='currency'?fmtNum(r[c.key],'currency'):(r[c.key]??''))}</td>`).join('')}</tr>`;
+    if(expandedRows.has(rid)){
+      const detailCols=(DF.widgets.table.detailColumns&&DF.widgets.table.detailColumns.length?DF.widgets.table.detailColumns.map(k=>DF.columns.find(c=>c.key===k)).filter(Boolean):includedColumns());
+      tbody+=`<tr class="detailRow"><td colspan="${cols.length+1}"><div class="detailGrid">${detailCols.map(c=>`<div class="di"><b>${escapeHtml(c.label)}</b>${escapeHtml(c.type==='currency'?fmtNum(r[c.key],'currency'):(r[c.key]??'—'))}</div>`).join('')}</div></td></tr>`;
+    }
+  });
+  tbody+='</tbody>';
+  table.innerHTML=thead+tbody;
+  table.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.k;
+    if(DF.widgets.table.sortKey===k)DF.widgets.table.sortDir=DF.widgets.table.sortDir==='asc'?'desc':'asc';
+    else{DF.widgets.table.sortKey=k;DF.widgets.table.sortDir='asc'}
+    renderDataTable();saveConfig();
+  });
+  table.querySelectorAll('.expandBtn').forEach(b=>b.onclick=()=>{
+    const rid=b.dataset.rid;
+    if(expandedRows.has(rid))expandedRows.delete(rid);else expandedRows.add(rid);
+    renderDataTable();
+  });
+}
+function renderDashboard(){
+  $('dashRecordCount').textContent=DF.records.length+T('recordsLoaded')+(getFilteredRecords().length!==DF.records.length?' · '+getFilteredRecords().length+T('recordsVisible'):'');
+  renderFilterBar();renderKpis();renderCharts();renderDataTable();
+  applySectionCollapse();
+}
+function applySectionCollapse(){
+  DF.widgets.collapsed=DF.widgets.collapsed||{};
+  const map={filters:'sectionFilters',cards:'sectionCards',charts:'sectionCharts',table:'sectionTable'};
+  Object.keys(map).forEach(k=>{
+    const el=$(map[k]);if(!el)return;
+    const collapsed=!!DF.widgets.collapsed[k];
+    el.classList.toggle('collapsed',collapsed);
+    const btn=el.querySelector('.toggleSectionBtn');
+    if(btn)btn.textContent=collapsed?'▸':'▾';
+  });
+}
+
+function moveArrItem(arr,id,dir){
+  const i=arr.findIndex(x=>x.id===id);
+  if(i<0)return;
+  const j=i+dir;
+  if(j<0||j>=arr.length)return;
+  const tmp=arr[i];arr[i]=arr[j];arr[j]=tmp;
+}
+function widgetItemHtml(id,label){
+  return `<div class="widgetItem"><div class="hd"><span>${escapeHtml(label)}</span><div class="reorderBtns">
+    <button class="ghost" data-act="up" data-id="${id}" title="Subir">↑</button>
+    <button class="ghost" data-act="down" data-id="${id}" title="Bajar">↓</button>
+    <button class="danger" data-act="del" data-id="${id}" title="Quitar">✕</button>
+  </div></div></div>`;
+}
+function renderFilterList(){
+  $('filterList').innerHTML=DF.widgets.filters.map(f=>widgetItemHtml(f.id,colLabel(f.columnKey))).join('')||'<p class="smallNote" style="margin-top:0">Sin filtros todavía.</p>';
+  $('filterList').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const act=b.dataset.act,id=b.dataset.id;
+    if(act==='del')DF.widgets.filters=DF.widgets.filters.filter(f=>f.id!==id);
+    else moveArrItem(DF.widgets.filters,id,act==='up'?-1:1);
+    renderFilterList();renderDashboard();saveConfig();
+  });
+}
+function renderCardList(){
+  $('cardList').innerHTML=DF.widgets.cards.map(c=>widgetItemHtml(c.id,c.label)).join('')||'<p class="smallNote" style="margin-top:0">Sin tarjetas todavía.</p>';
+  $('cardList').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const act=b.dataset.act,id=b.dataset.id;
+    if(act==='del')DF.widgets.cards=DF.widgets.cards.filter(c=>c.id!==id);
+    else moveArrItem(DF.widgets.cards,id,act==='up'?-1:1);
+    renderCardList();renderDashboard();saveConfig();
+  });
+}
+function renderChartList(){
+  $('chartList').innerHTML=DF.widgets.charts.map(c=>widgetItemHtml(c.id,c.label)).join('')||'<p class="smallNote" style="margin-top:0">Sin gráficos todavía.</p>';
+  $('chartList').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const act=b.dataset.act,id=b.dataset.id;
+    if(act==='del')DF.widgets.charts=DF.widgets.charts.filter(c=>c.id!==id);
+    else moveArrItem(DF.widgets.charts,id,act==='up'?-1:1);
+    renderChartList();renderDashboard();saveConfig();
+  });
+}
+
+/* ===================== Módulo: Proformas / Cotizaciones ===================== */
+let PF={
+  ruc:'',companyName:'',slogan:'',address:'',phone:'',email:'',logo:null,color:BRAND_COLORS[0],
+  clientName:'',clientRuc:'',clientAddress:'',
+  number:'0001',date:new Date().toISOString().slice(0,10),validity:'15',igv:'yes',
+  notes:'Forma de pago: contado. Precios incluyen IGV.',
+  items:[{desc:'',qty:1,price:0}]
+};
+const PF_KEY='dashflow_proforma_v1';
+function savePf(){try{localStorage.setItem(PF_KEY,JSON.stringify(PF))}catch(e){}}
+function loadPf(){try{const raw=localStorage.getItem(PF_KEY);if(raw)Object.assign(PF,JSON.parse(raw))}catch(e){}}
+function numeroALetras(num){
+  const UNIDADES=['','UNO','DOS','TRES','CUATRO','CINCO','SEIS','SIETE','OCHO','NUEVE'];
+  const DIECIS=['DIEZ','ONCE','DOCE','TRECE','CATORCE','QUINCE','DIECISÉIS','DIECISIETE','DIECIOCHO','DIECINUEVE'];
+  const DECENAS=['','DIEZ','VEINTE','TREINTA','CUARENTA','CINCUENTA','SESENTA','SETENTA','OCHENTA','NOVENTA'];
+  const CENTENAS=['','CIENTO','DOSCIENTOS','TRESCIENTOS','CUATROCIENTOS','QUINIENTOS','SEISCIENTOS','SETECIENTOS','OCHOCIENTOS','NOVECIENTOS'];
+  function seccion(n){
+    if(n===0)return'';
+    if(n===100)return'CIEN';
+    let s='';const c=Math.floor(n/100),r=n%100;
+    if(c>0)s+=CENTENAS[c]+' ';
+    if(r>0){
+      if(r<10)s+=UNIDADES[r];
+      else if(r<20)s+=DIECIS[r-10];
+      else{const d=Math.floor(r/10),u=r%10;s+=DECENAS[d];if(u>0)s+=' Y '+UNIDADES[u]}
+    }
+    return s.trim();
+  }
+  function miles(n){
+    if(n===0)return'';
+    if(n<1000)return seccion(n);
+    const m=Math.floor(n/1000),r=n%1000;
+    let s=m===1?'MIL':seccion(m)+' MIL';
+    if(r>0)s+=' '+seccion(r);
+    return s.trim();
+  }
+  function millones(n){
+    if(n<1000000)return miles(n);
+    const mm=Math.floor(n/1000000),r=n%1000000;
+    let s=mm===1?'UN MILLÓN':seccion(mm)+' MILLONES';
+    if(r>0)s+=' '+miles(r);
+    return s.trim();
+  }
+  const entero=Math.floor(num||0);
+  const dec=Math.round(((num||0)-entero)*100);
+  const decStr=String(dec).padStart(2,'0');
+  return (entero===0?'CERO':millones(entero))+' CON '+decStr+'/100';
+}
+function calcPfTotals(){
+  const subtotal=PF.items.reduce((s,it)=>s+(Number(it.qty)||0)*(Number(it.price)||0),0);
+  const igv=PF.igv==='yes'?subtotal*0.18:0;
+  return {subtotal,igv,total:subtotal+igv};
+}
+function initProformaScreen(){
+  loadPf();
+  $('pfRuc').value=PF.ruc;$('pfCompanyName').value=PF.companyName;$('pfSlogan').value=PF.slogan;
+  $('pfAddress').value=PF.address;$('pfPhone').value=PF.phone;$('pfEmail').value=PF.email;
+  $('pfClientName').value=PF.clientName;$('pfClientRuc').value=PF.clientRuc;$('pfClientAddress').value=PF.clientAddress;
+  $('pfNumber').value=PF.number;$('pfDate').value=PF.date||new Date().toISOString().slice(0,10);
+  $('pfValidity').value=PF.validity;$('pfIgv').value=PF.igv;$('pfNotes').value=PF.notes;
+  renderPfLogoPreview();renderPfColorSwatches();renderPfItemsTable();renderPfDocument();
+}
+function renderPfLogoPreview(){
+  const box=$('pfLogoPreview');
+  if(PF.logo){box.style.backgroundImage='url('+PF.logo+')';box.style.backgroundSize='cover';box.textContent=''}
+  else{box.style.backgroundImage='';box.textContent='Sin logo'}
+}
+function renderPfColorSwatches(){
+  $('pfColorSwatches').innerHTML=BRAND_COLORS.map(c=>`<div class="swatch${PF.color===c?' selected':''}" data-c="${c}" style="background:${c}"></div>`).join('');
+  $('pfColorSwatches').querySelectorAll('.swatch').forEach(el=>el.onclick=()=>{PF.color=el.dataset.c;renderPfColorSwatches();renderPfDocument();savePf()});
+}
+function pfBindField(id,key){$(id).oninput=()=>{PF[key]=$(id).value;renderPfDocument();savePf()}}
+function renderPfItemsTable(){
+  const t=$('pfItemsTable');
+  let html='<thead><tr><th>Descripción</th><th style="width:90px">Cant.</th><th style="width:120px">P. Unit. (S/)</th><th style="width:110px">Subtotal</th><th></th></tr></thead><tbody>';
+  PF.items.forEach((it,i)=>{
+    const sub=(Number(it.qty)||0)*(Number(it.price)||0);
+    html+=`<tr data-row="${i}">
+      <td><input type="text" data-i="${i}" data-f="desc" value="${escapeHtml(it.desc)}" style="width:100%;border:0"></td>
+      <td><input type="number" data-i="${i}" data-f="qty" value="${it.qty}" min="0" step="1" style="width:100%;border:0"></td>
+      <td><input type="number" data-i="${i}" data-f="price" value="${it.price}" min="0" step="0.01" style="width:100%;border:0"></td>
+      <td class="pfSub" style="text-align:right;padding:8px">S/ ${sub.toFixed(2)}</td>
+      <td><button class="danger" data-del="${i}">✕</button></td>
+    </tr>`;
+  });
+  html+='</tbody>';
+  t.innerHTML=html;
+  t.querySelectorAll('[data-f]').forEach(el=>el.oninput=()=>{
+    const i=Number(el.dataset.i),f=el.dataset.f;
+    PF.items[i][f]=f==='desc'?el.value:Number(el.value);
+    const row=t.querySelector('tr[data-row="'+i+'"]');
+    if(row)row.querySelector('.pfSub').textContent='S/ '+((Number(PF.items[i].qty)||0)*(Number(PF.items[i].price)||0)).toFixed(2);
+    renderPfDocument();savePf();
+  });
+  t.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    PF.items.splice(Number(b.dataset.del),1);
+    if(!PF.items.length)PF.items.push({desc:'',qty:1,price:0});
+    renderPfItemsTable();renderPfDocument();savePf();
+  });
+}
+function renderPfDocument(){
+  const {subtotal,igv,total}=calcPfTotals();
+  const color=PF.color||BRAND_COLORS[0];
+  const itemsHtml=PF.items.map((it,i)=>{
+    const sub=(Number(it.qty)||0)*(Number(it.price)||0);
+    return `<tr>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee">${i+1}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee">${escapeHtml(it.desc||'—')}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:center">${Number(it.qty)||0}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:right">S/ ${(Number(it.price)||0).toFixed(2)}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid #eee;text-align:right">S/ ${sub.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+  const igvRow=PF.igv==='yes'?`<tr><td style="padding:4px 10px">IGV (18%)</td><td style="padding:4px 10px;text-align:right">S/ ${igv.toFixed(2)}</td></tr>`:'';
+  const logoHtml=PF.logo?`<img src="${PF.logo}" style="width:64px;height:64px;object-fit:contain;border-radius:8px">`:'';
+  $('pfDocument').innerHTML=`<div style="width:750px;padding:36px;font-family:Arial,Helvetica,sans-serif;color:#171a21">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ${color};padding-bottom:16px;margin-bottom:18px">
+      <div style="display:flex;gap:14px;align-items:center">
+        ${logoHtml}
+        <div>
+          <div style="font-size:19px;font-weight:900">${escapeHtml(PF.companyName||'Nombre de tu empresa')}</div>
+          ${PF.slogan?`<div style="font-size:11px;color:#666;font-style:italic">${escapeHtml(PF.slogan)}</div>`:''}
+          <div style="font-size:11px;color:#555;margin-top:3px">RUC: ${escapeHtml(PF.ruc||'—')}</div>
+          <div style="font-size:11px;color:#555">${escapeHtml(PF.address||'')}</div>
+          <div style="font-size:11px;color:#555">${escapeHtml(PF.phone||'')}${PF.phone&&PF.email?' · ':''}${escapeHtml(PF.email||'')}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="background:${color};color:#fff;padding:8px 18px;border-radius:8px;font-weight:900;font-size:15px;letter-spacing:.03em">PROFORMA</div>
+        <div style="margin-top:7px;font-size:13px;font-weight:700">N° ${escapeHtml(PF.number||'—')}</div>
+        <div style="font-size:11.5px;color:#555">Fecha: ${escapeHtml(PF.date||'')}</div>
+        <div style="font-size:11.5px;color:#555">Válido por ${escapeHtml(String(PF.validity||'—'))} días</div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px;font-size:12.5px;line-height:1.6">
+      <strong>Señor(es):</strong> ${escapeHtml(PF.clientName||'—')}<br>
+      <strong>RUC/DNI:</strong> ${escapeHtml(PF.clientRuc||'—')}<br>
+      <strong>Dirección:</strong> ${escapeHtml(PF.clientAddress||'—')}
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:${color};color:#fff">
+        <th style="padding:8px;text-align:left;width:30px">#</th><th style="padding:8px;text-align:left">Descripción</th><th style="padding:8px;text-align:center;width:60px">Cant.</th><th style="padding:8px;text-align:right;width:90px">P. Unit.</th><th style="padding:8px;text-align:right;width:100px">Subtotal</th>
+      </tr></thead>
+      <tbody>${itemsHtml}</tbody>
+    </table>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <table style="font-size:12.5px;min-width:230px">
+        <tr><td style="padding:4px 10px">Subtotal</td><td style="padding:4px 10px;text-align:right">S/ ${subtotal.toFixed(2)}</td></tr>
+        ${igvRow}
+        <tr style="font-weight:900;font-size:14.5px"><td style="padding:7px 10px;border-top:2px solid ${color}">TOTAL</td><td style="padding:7px 10px;border-top:2px solid ${color};text-align:right">S/ ${total.toFixed(2)}</td></tr>
+      </table>
+    </div>
+    <div style="margin-top:8px;font-size:10.5px;color:#666">SON: ${numeroALetras(total)} SOLES</div>
+    ${PF.notes?`<div style="margin-top:22px;font-size:11px;color:#444;border-top:1px solid #e2e6ec;padding-top:12px">${escapeHtml(PF.notes)}</div>`:''}
+  </div>`;
+}
+async function pfRenderCanvas(){return await html2canvas($('pfDocument').firstElementChild,{scale:2,backgroundColor:'#ffffff'})}
+
+/* ===================== Wiring ===================== */
+const THEME_KEY='dashflow_theme_v1';
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  $('themeToggleBtn').textContent=t==='dark'?'☀️':'🌙';
+  localStorage.setItem(THEME_KEY,t);
+}
+$('themeToggleBtn').onclick=()=>applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
+applyTheme(localStorage.getItem(THEME_KEY)||'light');
+$('langSelect').onchange=()=>setLang($('langSelect').value);
+applyI18nStatic();
+renderPurposeGrid();
+renderColorSwatches();
+renderManualColList();
+applyBranding();
+
+$('toStep2Btn').onclick=()=>{
+  if(DF.purpose==='proformas'){initProformaScreen();setActiveScreen('screenProforma');return}
+  setActiveScreen('screenUpload');
+};
+$('backTo1Btn').onclick=()=>setActiveScreen('screenPurpose');
+$('titleInput').oninput=()=>{DF.branding.title=$('titleInput').value||'Mi Dashboard';applyBranding()};
+$('logoInput').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;DF.branding.logo=await readFileAsDataUrl(f);applyBranding()};
+$('dropzone').onclick=()=>$('fileInput').click();
+$('dropzone').addEventListener('dragover',e=>{e.preventDefault();$('dropzone').classList.add('drag')});
+$('dropzone').addEventListener('dragleave',()=>$('dropzone').classList.remove('drag'));
+$('dropzone').addEventListener('drop',e=>{e.preventDefault();$('dropzone').classList.remove('drag');handleFile(e.dataTransfer.files&&e.dataTransfer.files[0])});
+$('fileInput').onchange=e=>handleFile(e.target.files&&e.target.files[0]);
+document.querySelectorAll('#dataModeTabs button').forEach(btn=>btn.onclick=()=>{
+  dataMode=btn.dataset.mode;
+  document.querySelectorAll('#dataModeTabs button').forEach(b=>b.classList.toggle('active',b===btn));
+  $('uploadModeBox').classList.toggle('hidden',dataMode!=='upload');
+  $('manualModeBox').classList.toggle('hidden',dataMode!=='manual');
+  if(dataMode==='manual')syncManualReady();else{DF.source={type:null,fileName:''};checkStep2Ready()}
+});
+$('addManualColBtn').onclick=()=>{manualColumns.push('');renderManualColList();syncManualReady()};
+$('backTo2Btn').onclick=()=>{
+  if(DF.source.type==='manual'&&DF.columns.length){manualColumns=DF.columns.map(c=>c.label);renderManualColList()}
+  setActiveScreen('screenUpload');
+};
+$('toStep3Btn').onclick=()=>{
+  loadActiveGrid();renderSheetPicker();renderColConfig();
+  const isManual=DF.source.type==='manual';
+  $('previewCard').classList.toggle('hidden',isManual);
+  $('manualRowsCard').classList.toggle('hidden',!isManual);
+  if(isManual)renderManualRowsTable();else renderPreviewTable();
+  setActiveScreen('screenStructure');
+};
+$('addManualRowBtn').onclick=()=>{
+  DF.rawRows.push(DF.columns.map(()=>''));
+  renderManualRowsTable();
+};
+$('backTo3Btn').onclick=()=>setActiveScreen('screenStructure');
+
+$('toStep4Btn').onclick=()=>{
+  const dataRowCount=DF.rawRows.slice(DF.headerRowIndex+1).filter(r=>r.some(c=>c!==''&&c!=null)).length;
+  if(dataRowCount===0&&!confirm(T('noRowsConfirm')))return;
+  if(!includedColumns().length&&!confirm(T('noColsConfirm')))return;
+  buildRecordsFromColumns();
+  populateSelectors();
+  renderTableColChecklist();
+  renderFilterList();renderCardList();renderChartList();
+  applyBranding();
+  syncAppearanceInputs();
+  renderDashboard();
+  saveConfig();
+  setActiveScreen('screenBuilder');
+};
+
+document.querySelectorAll('#editorPanel .tabBar button').forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll('#editorPanel .tabBar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['filters','cards','charts','table','appearance'].forEach(t=>$('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('hidden',t!==btn.dataset.tab));
+});
+
+$('addFilterBtn').onclick=()=>{
+  const colKey=$('newFilterCol').value;if(!colKey)return;
+  DF.widgets.filters.push({id:uid(),columnKey:colKey});
+  renderFilterList();renderDashboard();saveConfig();
+};
+$('addCardBtn').onclick=()=>{
+  const colKey=$('newCardCol').value;if(!colKey)return;
+  const agg=$('newCardAgg').value;
+  const label=$('newCardLabel').value.trim()||(colLabel(colKey)+' ('+$('newCardAgg').selectedOptions[0].textContent+')');
+  DF.widgets.cards.push({id:uid(),columnKey:colKey,agg,label});
+  $('newCardLabel').value='';
+  renderCardList();renderDashboard();saveConfig();
+};
+$('addChartBtn').onclick=()=>{
+  const xKey=$('newChartX').value,yKey=$('newChartY').value;if(!xKey||!yKey)return;
+  const type=$('newChartType').value,agg=$('newChartAgg').value;
+  const label=$('newChartLabel').value.trim()||(colLabel(yKey)+' por '+colLabel(xKey));
+  DF.widgets.charts.push({id:uid(),type,xKey,yKey,agg,label});
+  $('newChartLabel').value='';
+  renderChartList();renderDashboard();saveConfig();
+};
+$('editModeBtn').onclick=()=>{
+  const panel=$('editorPanel');
+  const isHidden=panel.classList.toggle('hidden');
+  $('editModeBtn').textContent=isHidden?'🛠️ Editar':'✕ Cerrar edición';
+  document.querySelector('.builderLayout').style.gridTemplateColumns=isHidden?'1fr':'';
+};
+$('resetAllBtn').onclick=()=>{
+  if(!confirm(T('resetAllConfirm')))return;
+  localStorage.removeItem(DF_KEY);
+  location.reload();
+};
+document.querySelectorAll('.toggleSectionBtn').forEach(btn=>btn.onclick=()=>{
+  DF.widgets.collapsed=DF.widgets.collapsed||{};
+  const sec=btn.dataset.sec;
+  DF.widgets.collapsed[sec]=!DF.widgets.collapsed[sec];
+  applySectionCollapse();saveConfig();
+});
+
+/* ===================== Apariencia ===================== */
+function renderColorSwatches2(){
+  $('colorSwatches2').innerHTML=BRAND_COLORS.map(c=>`<div class="swatch${DF.branding.color===c?' selected':''}" data-c="${c}" style="background:${c}"></div>`).join('');
+  $('colorSwatches2').querySelectorAll('.swatch').forEach(el=>el.onclick=()=>{DF.branding.color=el.dataset.c;syncAppearanceInputs();applyBranding();renderColorSwatches();saveConfig()});
+}
+function syncAppearanceInputs(){
+  $('colorPrimary').value=DF.branding.color;
+  $('colorSecondary').value=DF.branding.accent2||'#38bdf8';
+  $('colorBg').value=DF.branding.bg||'#f3f5f9';
+  $('colorCard').value=DF.branding.card||'#ffffff';
+  $('colorText').value=DF.branding.text||'#171a21';
+  renderColorSwatches2();
+}
+$('colorPrimary').oninput=e=>{DF.branding.color=e.target.value;applyBranding();renderColorSwatches();renderColorSwatches2();renderCharts();saveConfig()};
+$('colorSecondary').oninput=e=>{DF.branding.accent2=e.target.value;applyBranding();renderCharts();saveConfig()};
+$('colorBg').oninput=e=>{DF.branding.bg=e.target.value;applyBranding();saveConfig()};
+$('colorCard').oninput=e=>{DF.branding.card=e.target.value;applyBranding();saveConfig()};
+$('colorText').oninput=e=>{DF.branding.text=e.target.value;applyBranding();saveConfig()};
+$('resetAppearanceBtn').onclick=()=>{
+  Object.assign(DF.branding,{color:BRAND_COLORS[0],accent2:'#38bdf8',bg:'#f3f5f9',card:'#ffffff',text:'#171a21'});
+  syncAppearanceInputs();applyBranding();renderColorSwatches();renderCharts();saveConfig();
+};
+
+/* ===================== Descargar dashboard ===================== */
+function exportDashboardHtml(){
+  const merged={
+    purpose:DF.purpose,
+    branding:DF.branding,
+    source:{type:DF.source.type,fileName:DF.source.fileName,sheetNames:[],activeSheet:null,pdfPages:0,activePdfMode:'all'},
+    workbook:null,
+    rawRows:[],
+    headerRowIndex:DF.headerRowIndex,
+    columns:DF.columns,
+    records:DF.records,
+    widgets:DF.widgets,
+    filterValues:{}
+  };
+  const currentHtml=document.documentElement.outerHTML;
+  const startMarker='/*__DF_INIT_START__*/';
+  const endMarker='/*__DF_INIT_END__*/';
+  const s=currentHtml.indexOf(startMarker);
+  const e=currentHtml.indexOf(endMarker);
+  if(s<0||e<0){alert('No se pudo preparar el archivo para descargar.');return}
+  const safeJson=JSON.stringify(merged).replace(/<\/script/gi,'<\\/script');
+  const replacement=startMarker+'\nlet DF='+safeJson+';\n'+endMarker;
+  const out=currentHtml.slice(0,s)+replacement+currentHtml.slice(e+endMarker.length);
+  const blob=new Blob([out],{type:'text/html;charset=utf-8'});
+  const safeName=(DF.branding.title||'DASHFLOW').replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'')||'DASHFLOW';
+  const name='Dashboard_'+safeName+'.html';
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+$('downloadDashBtn').onclick=exportDashboardHtml;
+
+['pfRuc','pfCompanyName','pfSlogan','pfAddress','pfPhone','pfEmail','pfClientName','pfClientRuc','pfClientAddress','pfNumber','pfDate','pfValidity','pfNotes']
+  .forEach(id=>pfBindField(id,id.replace(/^pf/,'').replace(/^[A-Z]/,c=>c.toLowerCase())));
+$('pfIgv').onchange=()=>{PF.igv=$('pfIgv').value;renderPfDocument();savePf()};
+$('pfLogoInput').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;PF.logo=await readFileAsDataUrl(f);renderPfLogoPreview();renderPfDocument();savePf()};
+$('pfAddItemBtn').onclick=()=>{PF.items.push({desc:'',qty:1,price:0});renderPfItemsTable();renderPfDocument();savePf()};
+$('pfBackBtn').onclick=()=>setActiveScreen('screenPurpose');
+$('pfDownloadPdfBtn').onclick=async()=>{
+  const canvas=await pfRenderCanvas();
+  const img=canvas.toDataURL('image/jpeg',0.95);
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF('p','mm','a4');
+  const pageW=210,pageH=pageW*canvas.height/canvas.width;
+  pdf.addImage(img,'JPEG',0,0,pageW,pageH);
+  pdf.save('Proforma_'+(PF.number||'documento')+'.pdf');
+};
+$('pfDownloadJpgBtn').onclick=async()=>{
+  const canvas=await pfRenderCanvas();
+  const url=canvas.toDataURL('image/jpeg',0.95);
+  const a=document.createElement('a');a.href=url;a.download='Proforma_'+(PF.number||'documento')+'.jpg';document.body.appendChild(a);a.click();a.remove();
+};
+$('pfShareBtn').onclick=async()=>{
+  const canvas=await pfRenderCanvas();
+  canvas.toBlob(async blob=>{
+    const fn='Proforma_'+(PF.number||'documento')+'.jpg';
+    const file=new File([blob],fn,{type:'image/jpeg'});
+    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){
+      try{await navigator.share({title:fn,text:'Proforma '+(PF.number||''),files:[file]});return}catch(e){if(e&&e.name==='AbortError')return}
+    }
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();a.remove();
+    window.open('https://wa.me/?text='+encodeURIComponent('Proforma '+(PF.number||'')+' descargada. Ábrela y compártela por WhatsApp.'),'_blank','noopener,noreferrer');
+  },'image/jpeg',0.95);
+};
+$('pfEmailBtn').onclick=async()=>{
+  const canvas=await pfRenderCanvas();
+  const url=canvas.toDataURL('image/jpeg',0.95);
+  const a=document.createElement('a');a.href=url;a.download='Proforma_'+(PF.number||'documento')+'.jpg';document.body.appendChild(a);a.click();a.remove();
+  const subject=encodeURIComponent('Proforma '+(PF.number||''));
+  const body=encodeURIComponent('Estimado(a) '+(PF.clientName||'')+',\n\nSe descargó la proforma como imagen a tu equipo — adjúntala a este correo antes de enviarlo.\n\nSaludos,\n'+(PF.companyName||''));
+  window.location.href='mailto:?subject='+subject+'&body='+body;
+};
+
+/* ===================== Init: sesión + restaurar dashboard guardado ===================== */
+checkSessionAndBoot();
+</script>
+</body>
+</html>
