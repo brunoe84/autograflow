@@ -48,6 +48,7 @@ p.sub{color:var(--shellMuted);margin:0 0 22px}
 .purposeCard:hover{transform:translateY(-2px)}
 .purposeCard.selected{border-color:var(--brand)}
 .purposeCard .ic{font-size:30px;margin-bottom:8px}
+.purposeCard .ic .afCardLogo{width:38px;height:38px;display:block;margin:0 auto;border-radius:9px;box-shadow:0 6px 16px rgba(77,20,140,.35)}
 .purposeCard .t{font-weight:800;font-size:14px}
 .purposeCard .d{font-size:11.5px;color:var(--shellMuted);margin-top:4px;line-height:1.4}
 .purposeCard.special{border-color:var(--brandOrange);background:linear-gradient(160deg,rgba(77,20,140,.09),rgba(255,98,0,.09))}
@@ -118,39 +119,110 @@ input[type=color]{width:44px;height:34px;padding:2px;border:1px solid var(--shel
 .colorField{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .reorderBtns{display:flex;gap:3px;align-items:center}
 .reorderBtns button{padding:2px 7px;font-size:11px}
-.authShell{display:grid;grid-template-columns:1.05fr 1fr;max-width:980px;margin:16px auto 30px;border-radius:24px;overflow:hidden;box-shadow:var(--shadow);background:var(--shellCard)}
-@media(max-width:760px){.authShell{grid-template-columns:1fr}}
-.authBrandPanel{position:relative;overflow:hidden;background:linear-gradient(160deg,var(--brandPurple),var(--brandPurple2) 55%,var(--brandOrange));color:#fff;padding:44px 40px;display:flex;flex-direction:column;justify-content:center;gap:20px}
-.authBrandPanel:before{content:'';position:absolute;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.09);top:-90px;right:-70px}
-.authBrandPanel:after{content:'';position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07);bottom:-70px;left:-50px}
-.authBrandLogo{display:flex;align-items:center;gap:12px;position:relative}
-.authBrandLogo .brandLogo{background:rgba(255,255,255,.2);width:46px;height:46px;font-size:17px}
-.authBrandName{font-weight:900;font-size:19px;letter-spacing:-.02em;color:#fff}
-.authBrandName .logoFlow{color:#ffd9b3}
-.authBrandTitle{position:relative;font-size:27px;margin:4px 0 0;color:#fff;letter-spacing:-.02em;line-height:1.2}
-.authBrandSub{position:relative;color:rgba(255,255,255,.88);margin:0;line-height:1.55;font-size:14px}
-.authFeatureList{position:relative;list-style:none;padding:0;margin:6px 0 0;display:flex;flex-direction:column;gap:13px}
-.authFeatureList li{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;color:#fff;line-height:1.4}
-.authFeatureList .fIcon{font-size:16px;flex:0 0 auto;background:rgba(255,255,255,.18);width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center}
-.authFormPanel{padding:44px 38px;display:flex;align-items:center;justify-content:center}
-.authFormInner{width:100%;max-width:340px}
-.authFormTitle{font-size:19px;margin:16px 0 14px;color:var(--shellInk)}
-.authTabBar{background:var(--shellBg);padding:4px;border-radius:12px;gap:0;margin-bottom:0}
-.authTabBar button{flex:1;background:transparent;border-radius:9px;color:var(--shellMuted);box-shadow:none}
-.authTabBar button.active{background:linear-gradient(135deg,var(--brandPurple),var(--brandOrange));color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.18)}
-.authTabBar button:hover:not(.active){transform:none;box-shadow:none;color:var(--shellInk)}
-.pwWrap{position:relative}
-.pwWrap input{padding-right:42px}
-.pwToggle{position:absolute;right:3px;top:3px;bottom:3px;background:transparent;border:0;padding:0 10px;font-size:15px;cursor:pointer;box-shadow:none}
-.pwToggle:hover{transform:none;box-shadow:none;background:var(--shellBtnBg)}
-.authMsg{font-size:12.5px;color:var(--danger);min-height:16px;margin-top:6px;line-height:1.4}
-.authSubmitBtn{margin-top:8px;padding:13px 15px;font-size:14.5px;background:linear-gradient(135deg,var(--brandPurple),var(--brandOrange));box-shadow:0 8px 18px rgba(77,20,140,.22)}
-.authCheckrow{align-items:flex-start;margin:14px 0}
-.authCheckrow input{margin-top:3px;flex:0 0 auto}
-.authSwitchLine{text-align:center;font-size:12.5px;color:var(--shellMuted);margin-top:16px}
-.authSwitchLine a{color:var(--brandPurple);font-weight:800;cursor:pointer;text-decoration:none}
-.authSwitchLine a:hover{text-decoration:underline}
-#legalModal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+
+/* ===================== Apariencia «Liquid Glass» =====================
+   Fondo de color vivo + superficies translúcidas que desenfocan lo de atrás, borde claro fino y brillo en el canto superior.
+   Las tarjetas del dashboard se tiñen con el color de marca que eligió el usuario (--card) y son menos translúcidas
+   para que los datos se lean bien. La proforma conserva su hoja blanca. */
+:root{
+  --glassBg:rgba(255,255,255,.50);--glassBorder:rgba(255,255,255,.7);--glassEdge:rgba(255,255,255,.95);
+  --glassSheen:linear-gradient(135deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.14) 36%,rgba(255,255,255,0) 62%);
+  --glassShadow:0 18px 44px rgba(48,32,110,.22);--glassBlur:blur(26px) saturate(190%);
+  --fieldBorder:rgba(77,20,140,.24);
+  --shellCard:var(--glassBg);--shellBtnBg:rgba(255,255,255,.5);--shellInputBg:rgba(255,255,255,.68);--shellLine:rgba(77,20,140,.14);
+  --pageBg:radial-gradient(900px 680px at 0% 8%,rgba(64,174,220,.55) 0%,transparent 61%),radial-gradient(780px 580px at 96% 0%,rgba(139,92,246,.52) 0%,transparent 60%),radial-gradient(920px 720px at 88% 100%,rgba(35,129,205,.46) 0%,transparent 64%),radial-gradient(720px 560px at 4% 100%,rgba(32,196,181,.30) 0%,transparent 60%),linear-gradient(150deg,#172741 0%,#1a2c4d 52%,#102c43 100%);
+}
+[data-theme="dark"]{
+  --glassBg:rgba(20,18,36,.38);--glassBorder:rgba(255,255,255,.16);--glassEdge:rgba(255,255,255,.28);
+  --glassSheen:linear-gradient(135deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.04) 36%,rgba(255,255,255,0) 62%);
+  --glassShadow:0 14px 34px rgba(0,0,0,.45);
+  --fieldBorder:rgba(255,255,255,.22);
+  --shellCard:var(--glassBg);--shellBtnBg:rgba(255,255,255,.08);--shellInputBg:rgba(255,255,255,.07);--shellLine:rgba(255,255,255,.12);
+  --brandPurple:#a98fe0;--brandPurple2:#c8b6ee;
+  --pageBg:radial-gradient(900px 680px at 0% 8%,rgba(64,174,220,.32) 0%,transparent 61%),radial-gradient(780px 580px at 96% 0%,rgba(139,92,246,.28) 0%,transparent 60%),radial-gradient(920px 720px at 88% 100%,rgba(35,129,205,.28) 0%,transparent 64%),radial-gradient(720px 560px at 4% 100%,rgba(32,196,181,.16) 0%,transparent 60%),linear-gradient(150deg,#0a1221 0%,#101a30 52%,#081923 100%);
+}
+body{background:var(--pageBg);background-attachment:fixed;min-height:100vh}
+/* Barras de desplazamiento de vidrio: riel translúcido y deslizador morado con brillo (Chrome, Edge, Safari).
+   Firefox no admite este estilo y usa una barra fina con los mismos colores. */
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.14);border-radius:999px;margin:10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(167,139,250,.95),rgba(109,40,217,.92));border-radius:999px;border:3px solid transparent;background-clip:padding-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(196,181,253,1),rgba(124,58,237,.98));background-clip:padding-box}
+::-webkit-scrollbar-thumb:active{background:linear-gradient(180deg,rgba(139,92,246,1),rgba(91,33,182,1));background-clip:padding-box}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+::-webkit-scrollbar-corner{background:transparent}
+[data-theme="dark"] ::-webkit-scrollbar-track{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.10)}
+@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:rgba(124,58,237,.85) rgba(255,255,255,.14)}}
+
+/* Títulos que van directo sobre el fondo oscuro de color (fuera de las tarjetas de vidrio): en claro para que se lean. */
+.screen :is(h1,.sub):not(.card *){color:#fff;text-shadow:0 1px 12px rgba(10,6,40,.35)}
+.screen .sub:not(.card *){color:rgba(255,255,255,.82)}
+/* Superficies de vidrio */
+header.top,.card,.purposeCard,.widgetItem,.dropzone,.filterBar,.kpiCard,.chartCard,.dataTableWrap{backdrop-filter:var(--glassBlur);-webkit-backdrop-filter:var(--glassBlur);border:1px solid var(--glassBorder);box-shadow:var(--glassShadow),inset 0 1px 0 var(--glassEdge)}
+header.top{background:var(--glassSheen),var(--glassBg);border-width:0 0 1px 0}
+.card,.purposeCard,.widgetItem{background:var(--glassSheen),var(--glassBg)}
+.card{border-radius:28px}.purposeCard{border-radius:24px;border-width:1.5px}.widgetItem{border-radius:16px}.kpiCard,.chartCard,.dataTableWrap{border-radius:20px}.filterBar{border-radius:18px}
+.purposeCard:hover{box-shadow:0 16px 36px rgba(48,32,110,.2),inset 0 1px 0 var(--glassEdge)}
+.purposeCard.selected{border-color:var(--brand);box-shadow:var(--glassShadow),inset 0 1px 0 var(--glassEdge),0 0 0 3px color-mix(in srgb,var(--brand) 28%,transparent)}
+.purposeCard.special{border-color:color-mix(in srgb,var(--brandOrange) 65%,transparent);background:var(--glassSheen),linear-gradient(160deg,rgba(124,58,237,.16),rgba(255,98,0,.14)),var(--glassBg)}
+.dropzone{background:var(--glassSheen),var(--glassBg);border:2px dashed color-mix(in srgb,var(--brand) 40%,transparent)}
+.dropzone.drag{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 10%,transparent)}
+/* Dashboard: vidrio teñido con el color de marca elegido */
+.kpiCard,.chartCard,.dataTableWrap,.filterBar{background:var(--glassSheen),color-mix(in srgb,var(--card) 74%,transparent)}
+.kpiCard{border-top:4px solid var(--brand)}
+tr.detailRow td{background:color-mix(in srgb,var(--card) 60%,transparent)}
+/* Botones de vidrio; el principal, con degradado y brillo */
+button{background:var(--shellBtnBg);border:1px solid var(--glassBorder);backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%);box-shadow:inset 0 1px 0 var(--glassEdge)}
+button:hover:not(:disabled){box-shadow:0 8px 18px rgba(48,32,110,.16),inset 0 1px 0 var(--glassEdge)}
+button.primary{background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 90%,white),color-mix(in srgb,var(--brand-2) 82%,white));border-color:rgba(255,255,255,.45);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.18);box-shadow:0 8px 20px color-mix(in srgb,var(--brand) 32%,transparent),inset 0 1px 0 rgba(255,255,255,.5)}
+button.success{border-color:rgba(255,255,255,.4);box-shadow:0 8px 18px rgba(14,159,110,.28),inset 0 1px 0 rgba(255,255,255,.45)}
+button.danger{background:rgba(255,241,240,.72);border-color:rgba(224,41,79,.22)}
+[data-theme="dark"] button.danger{background:rgba(224,41,79,.16);color:#ff9aaa}
+button.ghost{background:var(--shellBtnBg);border-color:var(--glassBorder)}
+/* Botones de vidrio líquido: color translúcido + brillo que cae desde arriba + borde luminoso */
+button{background:linear-gradient(180deg,rgba(255,255,255,.50) 0%,rgba(255,255,255,.14) 58%,rgba(255,255,255,.06) 100%),rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.62);border-radius:14px;box-shadow:0 8px 20px rgba(48,32,110,.12),inset 0 1px 0 rgba(255,255,255,.85);transition:transform .15s ease,box-shadow .15s ease,filter .15s ease}
+[data-theme="dark"] button{background:linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,.04) 58%,rgba(255,255,255,0) 100%),rgba(255,255,255,.06);border-color:rgba(255,255,255,.2);box-shadow:0 8px 20px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.22)}
+button.primary,button.success,.tabBar button.active{color:#fff;border:1px solid rgba(255,255,255,.62);text-shadow:0 1px 2px rgba(20,10,50,.35);box-shadow:0 10px 26px rgba(48,32,110,.24),inset 0 1px 0 rgba(255,255,255,.8),inset 0 -3px 8px rgba(255,255,255,.12)}
+button.primary{background:linear-gradient(180deg,rgba(255,255,255,.40) 0%,rgba(255,255,255,.06) 58%,rgba(255,255,255,0) 100%),linear-gradient(135deg,color-mix(in srgb,var(--brand) 62%,transparent),color-mix(in srgb,var(--brand-2) 58%,transparent))}
+button.success{background:linear-gradient(180deg,rgba(255,255,255,.40) 0%,rgba(255,255,255,.06) 58%,rgba(255,255,255,0) 100%),linear-gradient(135deg,rgba(110,231,183,.68),rgba(5,150,105,.62))}
+.tabBar button.active{background:linear-gradient(180deg,rgba(255,255,255,.40) 0%,rgba(255,255,255,.06) 58%,rgba(255,255,255,0) 100%),linear-gradient(135deg,rgba(167,139,250,.70),rgba(109,40,217,.62))}
+button:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.07);box-shadow:0 14px 30px rgba(48,32,110,.24),inset 0 1px 0 rgba(255,255,255,.9)}
+button:active:not(:disabled){transform:translateY(0) scale(.98)}
+/* Acabado profesional: color intenso (no lavado) + brillo superior + canto iluminado + resplandor del mismo tono */
+button.primary{background:linear-gradient(180deg,rgba(255,255,255,.26) 0%,rgba(255,255,255,.06) 52%,rgba(255,255,255,0) 100%),linear-gradient(135deg,color-mix(in srgb,var(--brand) 94%,white),color-mix(in srgb,var(--brand) 78%,black));border:1px solid rgba(255,255,255,.38);box-shadow:0 10px 24px color-mix(in srgb,var(--brand) 40%,transparent),0 0 0 1px rgba(255,255,255,.08),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(0,0,0,.18)}
+button.success{background:linear-gradient(180deg,rgba(255,255,255,.26) 0%,rgba(255,255,255,.06) 52%,rgba(255,255,255,0) 100%),linear-gradient(135deg,#10b981,#047857);border:1px solid rgba(255,255,255,.38);box-shadow:0 10px 24px rgba(4,120,87,.35),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(0,0,0,.18)}
+.tabBar button.active{background:linear-gradient(180deg,rgba(255,255,255,.26) 0%,rgba(255,255,255,.06) 52%,rgba(255,255,255,0) 100%),linear-gradient(135deg,#7c3aed,#4d148c);border:1px solid rgba(255,255,255,.38);box-shadow:0 8px 20px rgba(76,29,149,.35),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(0,0,0,.18)}
+button.primary,button.success,.tabBar button.active{text-shadow:0 1px 1px rgba(0,0,0,.25)}
+button.primary:hover:not(:disabled){box-shadow:0 14px 30px color-mix(in srgb,var(--brand) 48%,transparent),0 0 0 4px color-mix(in srgb,var(--brand) 22%,transparent),inset 0 1px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(0,0,0,.18)}
+/* Desactivado: vidrio gris apagado, claramente no disponible */
+button:disabled,button.primary:disabled,button.success:disabled{background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,.12)),rgba(255,255,255,.18);color:rgba(23,26,33,.45);border:1px solid rgba(255,255,255,.45);text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.6);filter:none;opacity:1}
+[data-theme="dark"] button:disabled,[data-theme="dark"] button.primary:disabled,[data-theme="dark"] button.success:disabled{background:rgba(255,255,255,.06);color:rgba(228,230,235,.4);border-color:rgba(255,255,255,.14)}
+.expandBtn{backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;border:0}
+/* Campos y listas: vidrio con borde visible */
+input[type=text],input[type=number],input[type=date],input[type=email],input[type=password],select,textarea{background:var(--shellInputBg);border:1px solid var(--fieldBorder);border-radius:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 1px 2px rgba(48,32,110,.08);transition:border-color .15s ease,box-shadow .15s ease}
+input[type=text]:focus,input[type=number]:focus,input[type=date]:focus,input[type=email]:focus,input[type=password]:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent)}
+[data-theme="dark"] select option{background:#1d1a30;color:var(--shellInk)}
+.swatch{border-color:rgba(255,255,255,.85)}
+/* Sistema Liquid Glass: controles y capas mantienen el mismo brillo y profundidad. */
+button{border-radius:15px;border:1px solid rgba(255,255,255,.68);background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.12) 58%,rgba(255,255,255,.06)),rgba(255,255,255,.18);box-shadow:0 5px 14px rgba(40,16,90,.12),inset 0 1px 0 rgba(255,255,255,.92);backdrop-filter:blur(16px) saturate(180%);-webkit-backdrop-filter:blur(16px) saturate(180%);transition:transform .18s ease,box-shadow .18s ease,filter .18s ease,border-color .18s ease}
+button.primary{background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,.04) 48%,transparent),linear-gradient(135deg,color-mix(in srgb,var(--brand) 96%,white),color-mix(in srgb,var(--brand) 78%,black));border-color:rgba(255,255,255,.5);box-shadow:0 9px 22px color-mix(in srgb,var(--brand) 38%,transparent),inset 0 1px 0 rgba(255,255,255,.62),inset 0 -1px 0 rgba(0,0,0,.16)}
+button.success{background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,.04) 48%,transparent),linear-gradient(135deg,#10b981,#047857);border-color:rgba(255,255,255,.5);box-shadow:0 9px 22px rgba(4,120,87,.3),inset 0 1px 0 rgba(255,255,255,.62),inset 0 -1px 0 rgba(0,0,0,.16)}
+button.ghost{background:linear-gradient(180deg,rgba(255,255,255,.58),rgba(255,255,255,.10)),rgba(255,255,255,.12);border-color:rgba(255,255,255,.68)}
+button.danger{background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.04) 48%,transparent),linear-gradient(135deg,#fb7185,#be123c);border-color:rgba(255,255,255,.48);color:#fff;text-shadow:0 1px 2px rgba(80,10,30,.3);box-shadow:0 8px 18px rgba(190,24,60,.28),inset 0 1px 0 rgba(255,255,255,.58)}
+button:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 12px 26px rgba(40,16,90,.2),inset 0 1px 0 rgba(255,255,255,.95)}
+button:active:not(:disabled){transform:translateY(0) scale(.98)}
+.purposeCard{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}
+.purposeCard.selected{background:var(--glassSheen),linear-gradient(145deg,color-mix(in srgb,var(--brand) 24%,transparent),rgba(255,255,255,.46));border-color:color-mix(in srgb,var(--brand) 76%,white);box-shadow:0 14px 34px rgba(48,32,110,.25),0 0 0 3px color-mix(in srgb,var(--brand) 24%,transparent),inset 0 1px 0 var(--glassEdge)}
+.tabBar{padding:5px;border:1px solid var(--glassBorder);border-radius:16px;background:rgba(255,255,255,.16);backdrop-filter:blur(16px) saturate(180%);-webkit-backdrop-filter:blur(16px) saturate(180%)}
+.tabBar button{border-radius:12px}
+header.top .row>button,header.top .row>select{min-height:42px;border:1px solid rgba(255,255,255,.72);border-radius:15px;background:linear-gradient(145deg,rgba(255,255,255,.66),rgba(255,255,255,.14) 58%,rgba(255,255,255,.08)),rgba(230,240,255,.22);box-shadow:0 6px 16px rgba(14,33,62,.13),inset 0 1px 0 rgba(255,255,255,.9);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%)}
+header.top .row>select{appearance:none;-webkit-appearance:none;padding:8px 34px 8px 12px;background-image:linear-gradient(45deg,transparent 50%,#4c1d95 50%),linear-gradient(135deg,#4c1d95 50%,transparent 50%),linear-gradient(145deg,rgba(255,255,255,.66),rgba(255,255,255,.14) 58%,rgba(255,255,255,.08));background-position:calc(100% - 16px) 50%,calc(100% - 10px) 50%,center;background-size:6px 6px,6px 6px,cover;background-repeat:no-repeat}
+[data-theme="dark"] header.top .row>button,[data-theme="dark"] header.top .row>select{background-color:rgba(24,30,50,.62);border-color:rgba(255,255,255,.22);color:#f2edff}
+.card,.purposeCard,.widgetItem,.filterBar,.kpiCard,.chartCard,.dataTableWrap{box-shadow:var(--glassShadow),inset 0 1px 0 var(--glassEdge)}
+button:disabled{color:rgba(23,26,33,.62);background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.18)),rgba(148,163,184,.22);border-color:rgba(255,255,255,.52);box-shadow:inset 0 1px 0 rgba(255,255,255,.7);opacity:1}
+[data-theme="dark"] button:disabled{color:rgba(228,230,235,.48);background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14)}
+button:focus-visible,.purposeCard:focus-visible{outline:3px solid rgba(196,181,253,.9);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){button,.purposeCard{transition:none!important}}
 </style>
 </head>
 <body>
@@ -168,65 +240,9 @@ input[type=color]{width:44px;height:34px;padding:2px;border:1px solid var(--shel
 
 <div class="wrap">
 
-<!-- Acceso: crear cuenta / iniciar sesión -->
-<section id="screenAuth" class="screen active">
-  <div class="authShell">
-    <div class="authBrandPanel">
-      <div class="authBrandLogo"><div class="brandLogo">DF</div><div class="authBrandName">Mi Dash<span class="logoFlow">Flow</span></div></div>
-      <h1 class="authBrandTitle" data-i18n="authTitle">Bienvenido a DASHFLOW</h1>
-      <p class="authBrandSub" data-i18n="authSub">Inicia sesión o crea tu cuenta para acceder a todas las herramientas y productos.</p>
-      <ul class="authFeatureList">
-        <li><span class="fIcon">📊</span><span data-i18n="authFeat1">Dashboards ilimitados desde Excel, CSV o PDF</span></li>
-        <li><span class="fIcon">🧾</span><span data-i18n="authFeat2">Proformas y cotizaciones en formato Perú</span></li>
-        <li><span class="fIcon">✍️</span><span data-i18n="authFeat3">AutograFlow: firma electrónica de documentos</span></li>
-        <li><span class="fIcon">🔒</span><span data-i18n="authFeat4">Todo se procesa en tu navegador, nunca en un servidor</span></li>
-      </ul>
-    </div>
-    <div class="authFormPanel">
-      <div class="authFormInner">
-        <div class="tabBar authTabBar" id="authTabs">
-          <button data-authtab="login" class="active" data-i18n="loginTab">Iniciar sesión</button>
-          <button data-authtab="register" data-i18n="registerTab">Crear cuenta</button>
-        </div>
-        <div id="authLoginBox">
-          <h2 class="authFormTitle" data-i18n="loginTitle">Inicia sesión</h2>
-          <div class="field"><label data-i18n="userLabel">Usuario</label><input id="authLoginUser" type="text" autocomplete="username" data-i18n-ph="userPh" placeholder="Ej. juan123"></div>
-          <div class="field"><label data-i18n="passLabel">Contraseña</label>
-            <div class="pwWrap"><input id="authLoginPass" type="password" autocomplete="current-password" data-i18n-ph="passPh" placeholder="Tu contraseña"><button type="button" class="pwToggle" data-target="authLoginPass">👁</button></div>
-          </div>
-          <div id="authLoginMsg" class="authMsg"></div>
-          <button id="authLoginBtn" class="primary authSubmitBtn" style="width:100%" data-i18n="loginBtn">🔐 Ingresar</button>
-          <div class="authSwitchLine"><a href="#" id="forgotPasswordLink" data-i18n="forgotPasswordLink">¿Olvidaste tu contraseña?</a></div>
-          <div class="authSwitchLine"><span data-i18n="switchToRegisterText">¿No tienes cuenta?</span> <a data-authtab="register" data-i18n="switchToRegisterLink">Crea una</a></div>
-        </div>
-        <div id="authRegisterBox" class="hidden">
-          <h2 class="authFormTitle" data-i18n="registerTitle">Crea tu cuenta</h2>
-          <div class="field"><label data-i18n="userLabel">Usuario</label><input id="authRegUser" type="text" autocomplete="username" data-i18n-ph="userPh" placeholder="Ej. juan123"></div>
-          <div class="field"><label data-i18n="emailLabel">Correo electrónico</label><input id="authRegEmail" type="email" autocomplete="email" data-i18n-ph="emailPh" placeholder="Ej. juan@correo.com"></div>
-          <div class="field"><label data-i18n="passLabel">Contraseña</label>
-            <div class="pwWrap"><input id="authRegPass" type="password" autocomplete="new-password" data-i18n-ph="passMinPh" placeholder="Mínimo 6 caracteres"><button type="button" class="pwToggle" data-target="authRegPass">👁</button></div>
-          </div>
-          <div class="field"><label data-i18n="pass2Label">Confirmar contraseña</label>
-            <div class="pwWrap"><input id="authRegPass2" type="password" autocomplete="new-password" data-i18n-ph="pass2Ph" placeholder="Repite tu contraseña"><button type="button" class="pwToggle" data-target="authRegPass2">👁</button></div>
-          </div>
-          <div class="checkrow authCheckrow"><input id="authAcceptTerms" type="checkbox"><span class="smallNote" style="margin-top:0">
-            <strong data-i18n="acceptTermsLabel">Acepto los Términos y Condiciones y la Política de Privacidad</strong><br>
-            <span data-i18n="acceptTermsDescPrefix">Léelos aquí:</span>
-            <a href="#" id="dfOpenTermsLink" data-i18n="termsLinkLbl" style="color:var(--brandPurple);font-weight:800">Términos y Condiciones</a> ·
-            <a href="#" id="dfOpenPrivacyLink" data-i18n="privacyLinkLbl" style="color:var(--brandPurple);font-weight:800">Política de Privacidad</a>
-          </span></div>
-          <div id="authRegMsg" class="authMsg"></div>
-          <button id="authRegBtn" class="primary authSubmitBtn" style="width:100%" data-i18n="registerBtn">👤 Crear cuenta</button>
-          <div class="authSwitchLine"><span data-i18n="switchToLoginText">¿Ya tienes cuenta?</span> <a data-authtab="login" data-i18n="switchToLoginLink">Inicia sesión</a></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- PASO 1: Propósito -->
 <section id="screenPurpose" class="screen">
-  <h1 data-i18n="p1Title">¿Para qué quieres tu dashboard?</h1>
+  <h1 data-i18n="p1Title">¿Qué quieres hacer hoy?</h1>
   <p class="sub" data-i18n="p1Sub">Elige lo que más se parece a lo que necesitas. Esto solo te sugiere un punto de partida — igual podrás personalizar todo después.</p>
   <div class="purposeGrid" id="purposeGrid"></div>
   <div class="row" style="justify-content:flex-end"><button id="toStep2Btn" class="primary" disabled data-i18n="contBtn">Continuar →</button></div>
@@ -442,14 +458,6 @@ input[type=color]{width:44px;height:34px;padding:2px;border:1px solid var(--shel
   </div>
 </section>
 
-<div id="legalModal" class="hidden">
-  <div class="card" style="max-width:640px;width:100%;max-height:85vh;overflow:auto">
-    <h2 id="legalModalTitle" style="margin-top:0"></h2>
-    <div id="legalModalBody" style="font-size:13px;line-height:1.65;color:var(--shellMuted)"></div>
-    <div style="text-align:center;margin-top:16px"><button id="legalModalClose" class="primary" data-i18n="legalModalClose">Cerrar</button></div>
-  </div>
-</div>
-
 </div>
 
 <script>
@@ -469,7 +477,7 @@ const LANG_KEY='dashflow_lang_v1';
 let LANG=localStorage.getItem(LANG_KEY)||'es';
 const I18N={
   es:{
-    p1Title:'¿Para qué quieres tu dashboard?',p1Sub:'Elige lo que más se parece a lo que necesitas. Esto solo te sugiere un punto de partida — igual podrás personalizar todo después.',contBtn:'Continuar →',
+    p1Title:'¿Qué quieres hacer hoy?',p1Sub:'Elige una herramienta: prepara documentos para firmar con AutograFlow, o crea un dashboard o una proforma. Los dashboards solo sugieren un punto de partida; luego podrás personalizar todo.',contBtn:'Continuar →',
     purpFinanzasT:'Finanzas',purpFinanzasD:'Ingresos, gastos, flujo de caja',
     purpInventarioT:'Inventario',purpInventarioD:'Stock, productos, movimientos',
     purpClientesT:'Clientes / CRM',purpClientesD:'Contactos, seguimiento, ventas',
@@ -538,7 +546,7 @@ const I18N={
     privacyText:'<p><strong>0. Alcance.</strong> Esta Política de Privacidad aplica a toda la plataforma. AutograFlow y DASHFLOW comparten la misma cuenta de usuario y procesan tus datos de la misma forma: 100% en tu navegador.</p><p><strong>1. Qué se procesa.</strong> Esta plataforma permite trabajar con archivos PDF, firmas, sellos, huellas, hojas de cálculo (Excel/CSV) y los datos que ingreses manualmente para tus dashboards y proformas.</p><p><strong>2. Procesamiento 100% local.</strong> Todo el procesamiento ocurre directamente en tu navegador, en tu propio dispositivo. No existen servidores propios para recibir, filtrar, analizar o almacenar tus documentos o datos.</p><p><strong>3. Sin almacenamiento ni alojamiento remoto.</strong> Ningún archivo, firma, sello, huella o dato se sube, guarda o aloja en servidores externos. Los archivos que generas se crean y descargan directamente en tu dispositivo.</p><p><strong>4. Datos guardados en tu dispositivo.</strong> Cierta información de cuenta y configuración (usuario, plan, preferencias, dashboards) se guarda únicamente en el almacenamiento local de tu navegador. Esta información no se transmite a ningún servidor.</p><p><strong>5. Nada persiste en línea.</strong> Si limpias los datos del navegador, cambias de dispositivo o el almacenamiento local se reinicia, la información no estará disponible en ningún otro lugar: no existe una copia en línea de tus documentos o dashboards.</p><p><strong>6. Compartir por WhatsApp, correo u otros medios.</strong> Si usas alguna función para compartir, el archivo se entrega directamente a la función nativa de tu dispositivo; la plataforma no interviene ni conserva copia de ese envío.</p><p><strong>7. Terceros.</strong> La plataforma puede cargar librerías públicas de terceros (por ejemplo, para generación de PDF o gráficos) desde redes de distribución de contenido, únicamente para su funcionamiento; esto no implica el envío de tus datos a dichos terceros.</p>'
   },
   en:{
-    p1Title:'What do you want your dashboard for?',p1Sub:'Choose whatever is closest to what you need. This is just a starting point — you can customize everything afterward.',contBtn:'Continue →',
+    p1Title:'What do you want to do today?',p1Sub:'Choose a tool: prepare documents for signing with AutograFlow, or create a dashboard or a quote. Dashboards are just a starting point; you can customize everything afterward.',contBtn:'Continue →',
     purpFinanzasT:'Finance',purpFinanzasD:'Income, expenses, cash flow',
     purpInventarioT:'Inventory',purpInventarioD:'Stock, products, movements',
     purpClientesT:'Clients / CRM',purpClientesD:'Contacts, follow-up, sales',
@@ -681,9 +689,10 @@ function applyBranding(){
 
 /* ===================== Cuentas / acceso =====================
    DASHFLOW y AutograFlow comparten la misma cuenta: mismas claves de
-   localStorage y misma forma de usuario que AutograFlow, para que iniciar
-   sesión (o registrarse) en cualquiera de los dos abra el otro sin pedirlo
-   de nuevo. */
+   localStorage y misma forma de usuario que AutograFlow. La portada de
+   planes, el registro y el inicio de sesión viven solo en AutograFlow;
+   DASHFLOW manda ahí a quien no tiene sesión o plan activo (con from=dashflow
+   para que, al terminar, AutograFlow lo devuelva aquí). */
 const AF_USERS_KEY='autograflow_users_v1';
 const AF_SESSION_KEY='autograflow_session_v1';
 const AUTOGRAFLOW_URL='AutograFlow_v43_Registro_Login_Planes.html';
@@ -692,15 +701,32 @@ function afSaveUsers(u){localStorage.setItem(AF_USERS_KEY,JSON.stringify(u))}
 function afSession(){return localStorage.getItem(AF_SESSION_KEY)}
 function afSetSession(u){localStorage.setItem(AF_SESSION_KEY,u)}
 function afClearSession(){localStorage.removeItem(AF_SESSION_KEY)}
-function dfIsActive(u){return !!u&&!!u.access&&new Date(u.expiresAt)>new Date()}
+function dfToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+// Debe coincidir con afIsActive de AutograFlow: si discrepan, cada app mandaría a la
+// otra en un bucle. Gratis vale solo el día en que se activó (2 documentos diarios).
+const DF_DOC_PLAN_LIMITS={free:2,occasional:10};
+function dfIsActive(u){
+  if(!u||!u.access)return false;
+  // Igual que afExtraDocs: los regalos por invitación cuentan mientras no venzan.
+  const bonus=(u.bonusGrants||[]).some(g=>g.left>0&&new Date(g.expiresAt)>new Date());
+  const hasDocs=()=>(u.docsUsed||0)<DF_DOC_PLAN_LIMITS[u.plan]||(u.extraDocsRemaining||0)>0||bonus;
+  if(u.plan==='free')return u.freeDay===dfToday()&&hasDocs();
+  // Ocasional también recibe 2 gratis cada día, además de su saldo comprado.
+  if(u.plan==='occasional')return hasDocs()||(u.dailyFreeDay===dfToday()?(u.dailyFreeUsed||0):0)<2;
+  return new Date(u.expiresAt)>new Date();
+}
 /* Dos archivos file:// no comparten localStorage entre sí en navegadores modernos
    (cada uno queda en su propio origen aislado), así que la cuenta viaja en la URL
    al cruzar de una app a la otra: quien recibe la guarda en su propio storage. */
-function gotoWithSso(url){
+function gotoWithSso(url,extra){
   const uname=afSession();const user=uname&&afUsers()[uname];
-  const qs=user?('?'+new URLSearchParams({sso:JSON.stringify(user)}).toString()):'';
-  location.href=url+qs;
+  const params=new URLSearchParams(extra||{});
+  if(user)params.set('sso',JSON.stringify(user));
+  const qs=params.toString();
+  location.href=url+(qs?'?'+qs:'');
 }
+// true si esta carga llegó desde AutograFlow con la sesión en la URL (navegación interna).
+var dfSsoArrived=false;
 function ssoConsumeFromUrl(){
   const params=new URLSearchParams(location.search);
   const payload=params.get('sso');
@@ -708,7 +734,7 @@ function ssoConsumeFromUrl(){
   try{
     const user=JSON.parse(payload);
     if(user&&user.username){
-      const users=afUsers();users[user.username]=user;afSaveUsers(users);afSetSession(user.username);
+      const users=afUsers();users[user.username]=user;afSaveUsers(users);afSetSession(user.username);dfSsoArrived=true;
     }
   }catch(e){console.warn('No se pudo procesar el inicio de sesión compartido',e)}
   params.delete('sso');
@@ -716,76 +742,17 @@ function ssoConsumeFromUrl(){
   history.replaceState(null,'',location.pathname+(rest?'?'+rest:'')+location.hash);
 }
 ssoConsumeFromUrl();
-function afFindUserByLogin(input){
-  const users=afUsers();const norm=String(input||'').trim().toLowerCase();
-  return Object.keys(users).find(uname=>uname.toLowerCase()===norm||(users[uname].email&&users[uname].email.toLowerCase()===norm))||null;
-}
-async function duHash(pw){
-  const enc=new TextEncoder().encode(String(pw));
-  const buf=await crypto.subtle.digest('SHA-256',enc);
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-function duSetAuthTab(tab){
-  document.querySelectorAll('#authTabs button').forEach(b=>b.classList.toggle('active',b.dataset.authtab===tab));
-  $('authLoginBox').classList.toggle('hidden',tab!=='login');
-  $('authRegisterBox').classList.toggle('hidden',tab!=='register');
-  $('authLoginMsg').textContent='';$('authRegMsg').textContent='';
-}
-document.querySelectorAll('[data-authtab]').forEach(b=>b.onclick=()=>duSetAuthTab(b.dataset.authtab));
-document.querySelectorAll('.pwToggle').forEach(btn=>btn.onclick=()=>{
-  const inp=$(btn.dataset.target);
-  const show=inp.type==='password';
-  inp.type=show?'text':'password';
-  btn.textContent=show?'🙈':'👁';
-});
-function dfOpenLegal(type){
-  $('legalModalTitle').textContent=type==='terms'?T('termsTitle'):T('privacyTitle');
-  $('legalModalBody').innerHTML=type==='terms'?T('termsText'):T('privacyText');
-  $('legalModal').classList.remove('hidden');
-}
-$('dfOpenTermsLink').onclick=e=>{e.preventDefault();dfOpenLegal('terms')};
-$('dfOpenPrivacyLink').onclick=e=>{e.preventDefault();dfOpenLegal('privacy')};
-$('legalModalClose').onclick=()=>$('legalModal').classList.add('hidden');
-$('forgotPasswordLink').onclick=e=>{e.preventDefault();location.href=AUTOGRAFLOW_URL+'?view=forgot'};
-async function duDoLogin(){
-  const input=$('authLoginUser').value.trim(),p=$('authLoginPass').value;
-  const uname=afFindUserByLogin(input);
-  if(!uname){$('authLoginMsg').textContent=T('authErrInvalid');return}
-  const users=afUsers();const user=users[uname];
-  const hash=await duHash(p);
-  if(user.password!==hash){$('authLoginMsg').textContent=T('authErrInvalid');return}
-  afSetSession(uname);
-  routeAfterAuth(user);
-}
-async function duDoRegister(){
-  const u=$('authRegUser').value.trim().toLowerCase(),email=$('authRegEmail').value.trim().toLowerCase(),p=$('authRegPass').value,p2=$('authRegPass2').value;
-  if(u.length<3){$('authRegMsg').textContent=T('authErrUserLen');return}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){$('authRegMsg').textContent=T('authErrEmail');return}
-  if(p.length<6){$('authRegMsg').textContent=T('authErrPassLen');return}
-  if(p!==p2){$('authRegMsg').textContent=T('authErrPassMatch');return}
-  if(!$('authAcceptTerms').checked){$('authRegMsg').textContent=T('authErrTerms');return}
-  const users=afUsers();
-  if(users[u]){$('authRegMsg').textContent=T('authErrUserExists');return}
-  if(Object.values(users).some(x=>x.email&&x.email.toLowerCase()===email)){$('authRegMsg').textContent=T('authErrEmailExists');return}
-  const user={username:u,email,password:await duHash(p),access:false,docsUsed:0,createdAt:new Date().toISOString(),lang:LANG,termsAcceptedAt:new Date().toISOString()};
-  users[u]=user;afSaveUsers(users);
-  afSetSession(u);
-  routeAfterAuth(user);
-}
-$('authLoginBtn').onclick=duDoLogin;
-$('authRegBtn').onclick=duDoRegister;
-['authLoginUser','authLoginPass'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')duDoLogin()}));
-['authRegUser','authRegEmail','authRegPass','authRegPass2'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')duDoRegister()}));
 function routeAfterAuth(user){
   // Un plan activo es lo que da acceso a toda la plataforma (DASHFLOW + AutograFlow).
   // Si la cuenta todavía no tiene uno, AutograFlow ya sabe mostrar la pantalla de
   // planes apenas detecta la sesión — no hace falta repetir esa pantalla aquí.
-  if(!dfIsActive(user)){gotoWithSso(AUTOGRAFLOW_URL);return}
+  if(!dfIsActive(user)){gotoWithSso(AUTOGRAFLOW_URL,{from:'dashflow'});return}
   enterHub(user);
 }
 function enterHub(user){
   if(user.lang&&user.lang!==LANG)setLang(user.lang);
-  $('userInfoBadge').textContent='👤 '+user.username;
+  // Quien entra «sin cuenta» desde AutograFlow llega con un usuario local fijo (guest).
+  $('userInfoBadge').textContent='👤 '+(user.guest?(LANG==='en'?'Guest':'Invitado'):user.username);
   $('userInfoBadge').classList.remove('hidden');
   $('logoutBtn').classList.remove('hidden');
   $('logoutBtn').title=T('logoutTooltip');
@@ -812,17 +779,20 @@ function checkSessionAndBoot(){
   }
   const uname=afSession();
   const user=uname&&afUsers()[uname];
+  // Sin cuenta: al abrir DASHFLOW directamente hay que aceptar de nuevo Términos y
+  // Privacidad en AutograFlow; llegar desde AutograFlow (sso) no cuenta como nueva entrada.
+  if(user&&user.guest&&!dfSsoArrived){afClearSession();location.href=AUTOGRAFLOW_URL+'?from=dashflow';return}
   if(user){routeAfterAuth(user)}
-  else{setActiveScreen('screenAuth')}
+  else{location.href=AUTOGRAFLOW_URL+'?from=dashflow'}
 }
 
 /* ===================== PASO 1: Propósito ===================== */
 function renderPurposeGrid(){
   const specialCard=`<div class="purposeCard special" data-special="autograflow">
     <div class="badge">${T('specialBadge')}</div>
-    <div class="ic">✍️</div><div class="t">${T('afCardTitle')}</div><div class="d">${T('afCardDesc')}</div></div>`;
+    <div class="ic"><svg class="afCardLogo" viewBox="0 0 100 100" role="img" aria-label="AutograFlow"><rect width="100" height="100" rx="22" fill="#4D148C"/><text x="50" y="64" font-family="Montserrat, Arial, sans-serif" font-weight="900" font-size="40" fill="#fff" text-anchor="middle">AF</text><polygon points="38,74 62,74 50,88" fill="#FF6200"/></svg></div><div class="t">${T('afCardTitle')}</div><div class="d">${T('afCardDesc')}</div></div>`;
   $('purposeGrid').innerHTML=PURPOSES.map(p=>`<div class="purposeCard${DF.purpose===p.id?' selected':''}" data-id="${p.id}">
-    <div class="ic">${p.ic}</div><div class="t">${T(p.tKey)}</div><div class="d">${T(p.dKey)}</div></div>`).join('')+specialCard;
+    <div class="ic">${p.ic}</div><div class="t">${T(p.tKey)}</div><div class="d">${T(p.dKey)}</div></div>`).join('');$('purposeGrid').insertAdjacentHTML('afterbegin',specialCard);
   $('purposeGrid').querySelectorAll('.purposeCard[data-id]').forEach(el=>el.onclick=()=>{
     DF.purpose=el.dataset.id;renderPurposeGrid();$('toStep2Btn').disabled=false;
   });
